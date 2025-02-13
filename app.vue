@@ -2,16 +2,18 @@
 
 <template>
 	<div>
-		<HomePage />
+		<Admin />
 	</div>
 </template>
 
 <script>
-	import HomePage from './src/HomePage.vue';
+	import Doctor from '@/src/Doctor.vue';
+	import Admin from '@/src/Admin.vue';
 
 	export default {
 		components: {
-			HomePage,
+			Doctor,
+			Admin,
 		},
 	};
 </script>
