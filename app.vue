@@ -2,8 +2,8 @@
 
 <template>
 	<div>
-		<!-- <Login/> -->
-		 <Admin/>
+		<Login/>
+		 <!-- <Admin/> -->
 	</div>
 </template>
 

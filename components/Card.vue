@@ -4,13 +4,11 @@
 	<div>
 		<!-- name -->
 		<div class="box">
-      <div class="text">
+	  <div class="text">
 			<div class="name">
 				{{ name }}
-			</div>
-			<div class="role"> Role : {{ role }} </div>
-
-      </div>
+			</div> 
+	  </div>
 		</div>
 	</div>
 </template>
@@ -18,10 +16,6 @@
 	export default {
 		props: {
 			name: {
-				type: String,
-				required: true,
-			},
-			role: {
 				type: String,
 				required: true,
 			},
