@@ -17,16 +17,18 @@
 			<h2 class="text-Dashboard">Dashboard</h2>
 		</div>
 		<!-- Recent History -->
-		<div class="history-dashboard">
-			<!-- Recent History left -->
-			<div class="left">
-				<h3>Recent History</h3>
-				<p>left</p>
-			</div>
-			<!-- Recent history right  -->
-			<div class="right">
-				<h3>Recent Jobs</h3>
-				<p>right</p>
+		<div class="space">
+			<div class="history-dashboard">
+				<!-- Recent History left -->
+				<div class="left">
+					<h3 class="head-card">Recent History</h3>
+						<Card v-for="(item, index) in recentHistoryLeft" :key="index" :name="item.name" :role="item.role" />
+				</div>
+				<!-- Recent history right  -->
+				<div class="right">
+					<h3 class="head-card">Recent Jobs</h3>
+						<Card v-for="(item, index) in recentHistoryRight" :key="index" :name="item.name" :role="item.role" />
+				</div>
 			</div>
 		</div>
 	</div>
@@ -41,19 +43,18 @@
 		},
 		data() {
 			return {
-				recentHistory: [
+				// this is mock data
+				recentHistoryLeft: [
 					{ name: 'Aman', role: 'Patient' },
-					{ name: 'gellia', role: 'Doctor' },
+					{ name: 'Gellia', role: 'Doctor' },
 					{ name: 'Biruk', role: 'Nurse' },
 					{ name: 'Vere', role: 'Dominised' },
-					{ name: 'Vere', role: 'Dominised' },
-					{ name: 'Vere', role: 'Dominised' },
 				],
-				recentJobs: [
-					{ title: 'Sales Executive', company: 'Access Bank' },
-					{ title: 'User Experience Designer', company: 'Payback' },
-					{ title: 'Product Manager', company: 'TPay' },
-					{ title: 'Smins ago', company: '' },
+				recentHistoryRight: [
+					{ name: 'John', role: 'Engineer' },
+					{ name: 'Doe', role: 'Designer' },
+					{ name: 'Smith', role: 'Manager' },
+					{ name: 'Jane', role: 'Developer' },
 				],
 			};
 		},
@@ -75,14 +76,24 @@
 		font-weight: bold;
 	}
 	.history-dashboard {
-		margin-top: 1% 3%;
-		background-color: red;
+		/* margin-top: 1% 3%; */
+		background-color: #ffffff;
 		display: flex;
 		justify-content: space-between;
 	}
 	.history-dashboard .left,
 	.history-dashboard .right {
 		flex: 1;
-		margin: 20px;
+		margin: 10px 2%;
+	}
+	.space {
+		/* margin-top: ; */
+		padding: 2% 4%;
+	}
+	.head-card {
+		margin-top: 3%;
+		margin-bottom: 3%;
+		font-size: x-large;
+		font-weight: bold;
 	}
 </style>
