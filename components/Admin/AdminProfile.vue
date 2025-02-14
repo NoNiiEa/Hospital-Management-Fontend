@@ -50,13 +50,15 @@
 	}
 	.Features-container {
 		display: flex;
+		align-items: center;
 		flex-direction: column;
 		margin-top: 5%;
 		height: 100vh;
 	}
 	.Features{
-		align-items: center;
-		margin-left: 5%;
-		margin-bottom: 2%;
+		margin: 2% 0%;	
+	}
+	.button-class {
+		width: 250px;
 	}
 </style>

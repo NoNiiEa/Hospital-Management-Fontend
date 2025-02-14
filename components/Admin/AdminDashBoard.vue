@@ -1,95 +1,133 @@
-<!-- @format -->
-
 <template lang="html">
 	<div>
-		<!-- seach box -->
+		<!-- Search box -->
 		<div class="search-container">
-			<div> </div>
+			<div></div>
 			<div class="search-box">
 				<input
 					type="text"
 					v-model="input"
-					placeholder="search..." />
+					placeholder="Search..." />
 			</div>
 		</div>
+
 		<!-- Dashboard -->
 		<div>
 			<h2 class="text-Dashboard">Dashboard</h2>
 		</div>
+
 		<!-- Recent History -->
 		<div class="space">
 			<div class="history-dashboard">
 				<!-- Recent History left -->
 				<div class="left">
-					<h3 class="head-card">Recent History</h3>
-						<Card v-for="(item, index) in recentHistoryLeft" :key="index" :name="item.name" :role="item.role" />
+					<h3 class="head-card">Patient History</h3>
+					<ul>
+						<li v-for="patient in recentHistoryLeft" :key="patient.id">
+							{{ patient.name }}
+						</li>
+					</ul>
 				</div>
-				<!-- Recent history right  -->
+
+				<!-- Recent History right -->
 				<div class="right">
 					<h3 class="head-card">Recent Jobs</h3>
-						<Card v-for="(item, index) in recentHistoryRight" :key="index" :name="item.name" :role="item.role" />
+					<!-- Add content for Recent Jobs here -->
 				</div>
 			</div>
 		</div>
 	</div>
 </template>
-<script>
-	import { ref } from 'vue';
-	import Card from '../Card.vue';
 
-	export default {
-		components: {
-			Card,
-		},
-		data() {
-			return {
-				// this is mock data
-				recentHistoryLeft: [
-					{ name: 'Aman', role: 'Patient' },
-					{ name: 'Gellia', role: 'Doctor' },
-					{ name: 'Biruk', role: 'Nurse' },
-					{ name: 'Vere', role: 'Dominised' },
-				],
-				recentHistoryRight: [
-					{ name: 'John', role: 'Engineer' },
-					{ name: 'Doe', role: 'Designer' },
-					{ name: 'Smith', role: 'Manager' },
-					{ name: 'Jane', role: 'Developer' },
-				],
-			};
-		},
-	};
+<script>
+import { ref, onMounted } from 'vue';
+import Card from '../Card.vue';
+
+export default {
+	components: {
+		Card,
+	},
+	data() {
+		return {
+			recentHistoryLeft: [],
+			input: '',
+		};
+	},
+	methods: {
+    async fetchPatients() {
+        try {
+            const response = await fetch('http://127.0.0.1:8000/patients/', {
+                headers: {
+                    accept: 'application/json',
+                },
+            });
+
+            // Check if response status is OK
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const text = await response.text(); // Read as text first for debugging
+            console.log('Response Text:', text);
+
+            // If the response starts with "<!DOCTYPE", it's likely HTML (e.g., an error page)
+            if (text.startsWith('<!DOCTYPE html>')) {
+                throw new Error('Received HTML instead of JSON. Check backend response.');
+            }
+
+            // Parse the valid JSON response
+            const data = JSON.parse(text);
+            this.recentHistoryLeft = data.map(patient => ({
+                id: patient.id,
+                name: patient.name,
+            }));
+        } catch (error) {
+            console.error('Error fetching patients:', error);
+        }
+    },
+},
+,
+	mounted() {
+		this.fetchPatients();
+	},
+};
 </script>
+
 <style lang="css">
 	.search-container {
 		margin: 2%;
+		display: flex;
 		flex-direction: column;
 	}
+
 	.search-box {
-		justify-content: center;
 		display: flex;
+		justify-content: center;
 		flex: 1;
-		/* resize search box */
 	}
+
 	.text-Dashboard {
-		margin: 2% 5%;
+		margin: 1% 5%;
+		font-size: xx-large;
 		font-weight: bold;
 	}
+
 	.history-dashboard {
-		/* margin-top: 1% 3%; */
 		background-color: #ffffff;
 		display: flex;
 		justify-content: space-between;
 	}
+
 	.history-dashboard .left,
 	.history-dashboard .right {
 		flex: 1;
 		margin: 10px 2%;
 	}
+
 	.space {
-		/* margin-top: ; */
 		padding: 2% 4%;
 	}
+
 	.head-card {
 		margin-top: 3%;
 		margin-bottom: 3%;
