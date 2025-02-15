@@ -1,3 +1,5 @@
+<!-- @format -->
+
 <template lang="html">
 	<div>
 		<!-- Search box -->
@@ -19,20 +21,64 @@
 		<!-- Recent History -->
 		<div class="space">
 			<div class="history-dashboard">
-				<!-- Recent History left -->
+				<!-- Recent History left - Patients -->
 				<div class="left">
-					<h3 class="head-card">Patient History</h3>
+					<div class="button-add-delete">
+						<h3 class="head-card">Patient</h3>
+						<!-- icon add patient -->
+						<div class="add-delete-right">
+							<button v-on:click="addPatients">
+								<img
+									src="@/assets/Images/add.png"
+									:height="imagesize"
+									:width="imagesize" />
+							</button>
+							<!-- icon delete paitnet -->
+							<button v-on:click="deletePatients">
+								<img
+									src="@/assets/Images/minus.png"
+									:height="imagesize"
+									:width="imagesize" />
+							</button>
+						</div>
+					</div>
 					<ul>
-						<li v-for="patient in recentHistoryLeft" :key="patient.id">
-							<Card :name="patient.name"/>
+						<li
+							v-for="patient in patients"
+							:key="patient.id">
+							<Card :name="patient.name" />
 						</li>
 					</ul>
 				</div>
 
-				<!-- Recent History right -->
+				<!-- Recent History right - Medical Personnel -->
 				<div class="right">
-					<h3 class="head-card">Recent Jobs</h3>
-					<!-- Add content for Recent Jobs here -->
+					<div class="button-add-delete">
+						<h3 class="head-card">Medical Personnel</h3>
+						<!-- icon add medical personnel -->
+						<div class="add-delete-right">
+							<button v-on:click="addMedicalPersonnel">
+								<img
+									src="@/assets/Images/add.png"
+									:height="imagesize"
+									:width="imagesize" />
+							</button>
+							<!-- icon delete medical personnel -->
+							<button v-on:click="deleteMedicalPersonnel">
+								<img
+									src="@/assets/Images/minus.png"
+									:height="imagesize"
+									:width="imagesize" />
+							</button>
+						</div>
+					</div>
+					<ul>
+						<li
+							v-for="person in medicalPersonnel"
+							:key="person.id">
+							<Card :name="person.name" />
+						</li>
+					</ul>
 				</div>
 			</div>
 		</div>
@@ -40,45 +86,93 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import Card from '../Card.vue';
+	import { ref, onMounted } from 'vue';
+	import Card from '../Card.vue';
 
-export default {
-    components: {
-        Card,
-    },
-    data() {
-        return {
-            recentHistoryLeft: [],
-            input: '',
-        };
-    },
-    methods: {
-        async fetchPatients() {
-            try {
-                const response = await fetch('http://127.0.0.1:8000/patients/', {
-                    headers: {
-                        accept: 'application/json',
-                    },
-                });
+	class Patient {
+		constructor(id, name) {
+			this.id = id;
+			this.name = name;
+		}
+	}
 
-                const text = await response.text(); 
-                console.log('Response Text:', text);
+	class MedicalPersonnel {
+		constructor(id, name) {
+			this.id = id;
+			this.name = name;
+		}
+	}
 
-                const data = JSON.parse(text);
-                this.recentHistoryLeft = data.map(patient => ({
-                    id: patient.id,
-                    name: patient.name,
-                }));
-            } catch (error) {
-                console.error('Error fetching patients:', error);
-            }
-        },
-    },
-    mounted() {
-        this.fetchPatients();
-    }
-};
+	const imagesize = '40px';
+	export default {
+		components: {
+			Card,
+		},
+		data() {
+			return {
+				patients: [],
+				medicalPersonnel: [],
+				input: '',
+				imagesize,
+			};
+		},
+		methods: {
+			async fetchPatients() {
+				try {
+					const response = await fetch('http://127.0.0.1:8000/patients/', {
+						headers: {
+							accept: 'application/json',
+						},
+					});
+
+					const text = await response.text();
+					console.log('Patients Response:', text);
+
+					const data = JSON.parse(text);
+					this.patients = data.map(
+						(patient) => new Patient(patient.id, patient.name),
+					);
+				} catch (error) {
+					console.error('Error fetching patients:', error);
+				}
+			},
+			async fetchMedicalPersonnel() {
+				try {
+					const response = await fetch('http://127.0.0.1:8000/doctors/', {
+						headers: {
+							accept: 'application/json',
+						},
+					});
+
+					const text = await response.text();
+					console.log('Medical Personnel Response:', text);
+
+					const data = JSON.parse(text);
+					this.medicalPersonnel = data.map(
+						(person) => new MedicalPersonnel(person.id, person.name),
+					);
+				} catch (error) {
+					console.error('Error fetching medical personnel:', error);
+				}
+			},
+			async addPatients() {
+				alert('add Patients');
+			},
+			async deletePatients() {
+				alert('delete Patients');
+			},
+			async addMedicalPersonnel() {
+				alert('add Medical Personnel');
+			},
+			async deleteMedicalPersonnel() {
+				alert('delete Medical Personnel');
+			},
+		},
+		mounted() {
+			this.fetchPatients();
+			this.fetchMedicalPersonnel();
+		},
+	};
 </script>
 
 <style lang="css">
@@ -104,6 +198,7 @@ export default {
 		background-color: #ffffff;
 		display: flex;
 		justify-content: space-between;
+		border-radius: 10px;
 	}
 
 	.history-dashboard .left,
@@ -121,5 +216,13 @@ export default {
 		margin-bottom: 3%;
 		font-size: x-large;
 		font-weight: bold;
+	}
+	.button-add-delete {
+		display: flex;
+	}
+	.add-delete-right {
+		margin-left: auto;
+		display: flex;
+		gap: 10px;
 	}
 </style>
