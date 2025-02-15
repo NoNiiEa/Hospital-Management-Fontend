@@ -1,16 +1,20 @@
 <!-- @format -->
 
 <template>
-	<div>
-		<!-- <Login/> -->
-		 <Admin/>
-	</div>
+  <div>
+    <!-- <nav>
+      <nuxt-link to="/login">Login</nuxt-link>
+      <nuxt-link to="/admin">Admin</nuxt-link>
+    </nav> -->
+    <NuxtPage />
+  </div>
 </template>
 
+
 <script>
-	import Doctor from '@/src/Doctor.vue';
-	import Admin from '@/src/Admin.vue';
-	import Login from '@/src/Login.vue'; 
+	import Doctor from '@/pages/Doctor.vue';
+	import Admin from '@/pages/Admin.vue';
+	import Login from '@/pages/Login.vue'; 
 
 	export default {
 		components: {
