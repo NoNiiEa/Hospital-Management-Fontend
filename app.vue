@@ -1,17 +1,26 @@
 <!-- @format -->
 
 <template>
-	<div>
-		<HomePage />
-	</div>
+  <div>
+    <!-- <nav>
+      <nuxt-link to="/login">Login</nuxt-link>
+      <nuxt-link to="/admin">Admin</nuxt-link>
+    </nav> -->
+    <NuxtPage />
+  </div>
 </template>
 
+
 <script>
-	import HomePage from './src/HomePage.vue';
+	import Doctor from '@/pages/Doctor.vue';
+	import Admin from '@/pages/Admin.vue';
+	import Login from '@/pages/Login.vue'; 
 
 	export default {
 		components: {
-			HomePage,
+			Doctor,
+			Admin,
+			Login, 
 		},
 	};
 </script>
