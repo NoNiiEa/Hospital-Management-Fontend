@@ -46,7 +46,12 @@
 						<li
 							v-for="patient in patients"
 							:key="patient.id">
-							<Card :name="patient.name" />
+								<Card 
+									:name="patient.name"
+									:id="patient.id"
+									type="patient"
+									@deleted="handleDeleted"
+								/>
 						</li>
 					</ul>
 				</div>
@@ -76,7 +81,12 @@
 						<li
 							v-for="person in medicalPersonnel"
 							:key="person.id">
-							<Card :name="person.name" />
+								<Card 
+									:name="person.name"
+									:id="person.id"
+									type="doctor"
+									@deleted="handleDeleted"
+								/>
 						</li>
 					</ul>
 				</div>
@@ -88,6 +98,7 @@
 <script>
 	import { ref, onMounted } from 'vue';
 	import Card from '../Card.vue';
+	import { useRouter } from 'vue-router';
 
 	class Patient {
 		constructor(id, name) {
@@ -107,6 +118,10 @@
 	export default {
 		components: {
 			Card,
+		},
+		setup() {
+			const router = useRouter();
+			return { router };
 		},
 		data() {
 			return {
@@ -156,16 +171,23 @@
 				}
 			},
 			async addPatients() {
-				alert('add Patients');
+				this.router.push('/patient/add_patient');
 			},
 			async deletePatients() {
-				alert('delete Patients');
+				this.router.push('/patient/delete_patient');
 			},
 			async addMedicalPersonnel() {
 				alert('add Medical Personnel');
 			},
 			async deleteMedicalPersonnel() {
 				alert('delete Medical Personnel');
+				},
+			handleDeleted({ id, type }) {
+				if (type === 'patient') {
+					this.patients = this.patients.filter(patient => patient.id !== id);
+				} else {
+					this.medicalPersonnel = this.medicalPersonnel.filter(person => person.id !== id);
+				}
 			},
 		},
 		mounted() {
