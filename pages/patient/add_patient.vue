@@ -183,7 +183,7 @@ export default {
       return true;
     },
     cancel() {
-      this.router.push('/');  // Return to dashboard
+      this.router.push('/admin');  // Return to dashboard
     }
   }
 };
