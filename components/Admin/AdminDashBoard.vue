@@ -177,10 +177,10 @@
 				this.router.push('/patient/delete_patient');
 			},
 			async addMedicalPersonnel() {
-				alert('add Medical Personnel');
+				this.router.push('/medical/add_medical');
 			},
 			async deleteMedicalPersonnel() {
-				alert('delete Medical Personnel');
+				this.router.push('/medical/delete_medical');
 				},
 			handleDeleted({ id, type }) {
 				if (type === 'patient') {
@@ -235,7 +235,7 @@
 
 	.head-card {
 		margin-top: 3%;
-		margin-bottom: 3%;
+		margin-bottom: 5%;
 		font-size: x-large;
 		font-weight: bold;
 	}
