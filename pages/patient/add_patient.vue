@@ -147,7 +147,7 @@ export default {
         if (response.ok) {
           // Show success message
           alert('Patient added successfully');
-          this.router.push('/');
+          this.router.push('/admin');
         } else {
           const errorData = await response.json();
           throw new Error(errorData.detail || 'Failed to save patient');
