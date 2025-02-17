@@ -42,9 +42,7 @@
 
         <div class="form-section">
           <h3>Medical History</h3>
-          <div v-for="(history, index) in patient.medical_history" 
-               :key="index" 
-               class="medical-history-item">
+          <div v-for="(history, index) in patient.medical_history" :key="index" class="medical-history-item">
             <div class="form-group">
               <label>Disease:</label>
               <input type="text" v-model="history.disease" required />
@@ -147,6 +145,7 @@ export default {
         if (response.ok) {
           // Show success message
           alert('Patient added successfully');
+          sessionStorage.setItem('needsRefresh', 'true');
           this.router.push('/admin');
         } else {
           const errorData = await response.json();

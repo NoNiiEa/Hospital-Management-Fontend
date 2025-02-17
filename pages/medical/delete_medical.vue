@@ -38,11 +38,15 @@ export default {
         if (response.ok) {
           alert('Medical personnel deleted successfully!')
           this.$router.push('/admin')
+          // Add refresh after navigation
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
         } else {
           alert('Failed to delete medical personnel')
         }
       } catch (error) {
-        console.error('Error deleting medical personnel:', error)
+        console.error('Error:', error)
         alert('Error deleting medical personnel')
       }
     },
@@ -60,7 +64,7 @@ export default {
   padding: 2rem;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
@@ -103,7 +107,8 @@ h2 {
   margin-top: 2rem;
 }
 
-.delete-btn, .cancel-btn {
+.delete-btn,
+.cancel-btn {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;

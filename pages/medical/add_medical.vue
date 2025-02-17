@@ -71,11 +71,15 @@ export default {
         if (response.ok) {
           alert('Medical personnel added successfully!')
           this.$router.push('/admin')
+          // Add refresh after navigation
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
         } else {
           alert('Failed to add medical personnel')
         }
       } catch (error) {
-        console.error('Error adding medical personnel:', error)
+        console.error('Error:', error)
         alert('Error adding medical personnel')
       }
     },
@@ -93,7 +97,7 @@ export default {
   padding: 2rem;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
@@ -134,7 +138,8 @@ h2 {
   margin-top: 2rem;
 }
 
-.submit-btn, .cancel-btn {
+.submit-btn,
+.cancel-btn {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
