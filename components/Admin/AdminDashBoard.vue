@@ -1,5 +1,3 @@
-<!-- @format -->
-
 <template lang="html">
 	<div>
 		<!-- Search box -->
@@ -9,6 +7,7 @@
 				<input type="text" v-model="input" placeholder="Search..." />
 			</div>
 		</div>
+
 
 		<!-- Dashboard -->
 		<div>
