@@ -18,9 +18,14 @@
       <div class="detail-section">
         <h3>Patients</h3>
         <div v-if="doctor.patients?.length" class="patients-list">
-          <div v-for="patient in doctor.patients" :key="patient.id" class="patient-item">
-            {{ patient.name }}
-          </div>
+          <Card
+            v-for="patient in patientsWithDetails"
+            :key="patient.patient_id"
+            :id="patient.patient_id"
+            :name="`${patient.name || 'Loading...'} - ${patient.diagnosis}`"
+            type="patient"
+            @deleted="handlePatientDeleted"
+          />
         </div>
         <div v-else>No patients assigned</div>
       </div>
@@ -32,38 +37,97 @@
 </template>
 
 <script>
+import Card from "~/components/Card.vue";
+
 export default {
+  components: {
+    Card,
+  },
   data() {
     return {
       doctor: null,
-      error: null
-    }
+      error: null,
+      patientsWithDetails: [],
+    };
   },
   async mounted() {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/doctors/get/${this.$route.params.id}`, {
-        headers: {
-          'accept': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        this.doctor = await response.json();
-      } else {
-        this.error = `Failed to fetch doctor details (Status: ${response.status})`;
-        console.error(this.error);
-      }
-    } catch (error) {
-      this.error = `Error fetching doctor: ${error.message}`;
-      console.error('Error:', error);
+    await this.fetchDoctorData();
+    if (this.doctor?.patients) {
+      await this.fetchPatientsDetails();
     }
   },
   methods: {
+    async fetchDoctorData() {
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/doctors/get/${this.$route.params.id}`,
+          {
+            headers: {
+              accept: "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          this.doctor = await response.json();
+        } else {
+          this.error = `Failed to fetch doctor details (Status: ${response.status})`;
+          console.error(this.error);
+        }
+      } catch (error) {
+        this.error = `Error fetching doctor: ${error.message}`;
+        console.error("Error:", error);
+      }
+    },
+    async fetchPatientsDetails() {
+      this.patientsWithDetails = await Promise.all(
+        this.doctor.patients.map(async (patient) => {
+          try {
+            const response = await fetch(
+              `http://127.0.0.1:8000/patients/get/${patient.patient_id}`,
+              {
+                headers: {
+                  accept: "application/json",
+                },
+              }
+            );
+            if (response.ok) {
+              const patientData = await response.json();
+              return {
+                ...patient,
+                name: patientData.name,
+              };
+            }
+            return patient;
+          } catch (error) {
+            console.error(
+              `Error fetching patient ${patient.patient_id}:`,
+              error
+            );
+            return patient;
+          }
+        })
+      );
+    },
     goBack() {
-      this.$router.push('/admin');
-    }
-  }
-}
+      this.$router.push("/admin");
+    },
+    formatDate(dateString) {
+      if (!dateString) return "N/A";
+      return new Date(dateString).toLocaleDateString();
+    },
+    handlePatientDeleted({ id }) {
+      if (this.doctor && this.doctor.patients) {
+        this.doctor.patients = this.doctor.patients.filter(
+          (patient) => patient.patient_id !== id
+        );
+        this.patientsWithDetails = this.patientsWithDetails.filter(
+          (patient) => patient.patient_id !== id
+        );
+      }
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -94,14 +158,20 @@ h3 {
 }
 
 .patients-list {
-  display: grid;
-  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .patient-item {
-  padding: 0.5rem;
+  padding: 1rem;
   background: #f8fafc;
   border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.patient-item p {
+  margin: 0.5rem 0;
 }
 
 .back-btn {

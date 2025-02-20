@@ -1,6 +1,7 @@
 <template lang="html">
   <div>
     <div>this is a index page</div>
+    
   </div>
 </template>
 <script>
