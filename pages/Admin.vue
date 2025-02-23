@@ -14,25 +14,25 @@
 </template>
 
 <script>
-	export default {};
+export default {};
 </script>
 
 <style>
-	.admin-page {
-		display: flex;
-		width: 100%;
-		height: 100%;
-	}
+.admin-page {
+	display: flex;
+	width: 100%;
+	height: 100%;
+}
 
-	.left-side {
-		margin-top: 5%;
-		width: 25%;
-		/* background-color: #121c3e;
+.left-side {
+	margin-top: 5%;
+	width: 25%;
+	/* background-color: #121c3e;
 		color: #121c3e; */
-	}
+}
 
-	.right-side {
-		flex: 1;
-		background-color: #e3edf9;
-	}
+.right-side {
+	flex: 1;
+	background-color: #e3edf9;
+}
 </style>
