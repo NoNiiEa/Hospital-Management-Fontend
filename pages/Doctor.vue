@@ -38,23 +38,15 @@
         </ul>
       </div>
 
-      <!-- <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-lg font-semibold text-gray-700">เคสล่าสุด</h2>
-          <ul class="mt-3">
-            <li v-for="(patientItem, index) in doctor_REF?.patients || []" :key="index" class="p-2 border-b">
-              <strong>{{ patientItem.patient_id }}</strong>:
-              <br>
-              {{ patientItem.diagnosis }} 
-              <span v-if="patientItem.last_visit !== 'N/A'"> (เยี่ยมล่าสุด: {{ patientItem.last_visit }})</span>
-            </li>
-        </ul>
-      </div> -->
 
       <div class="bg-white p-6 rounded-lg shadow-md">
         <h2 class="text-lg font-semibold text-gray-700">เคสล่าสุด</h2>
         <ul class="mt-3">
           <li v-for="(patientItem, index) in doctor_REF?.patients || []" :key="index" class="p-2 border-b">
-            <strong>{{ patientNames[patientItem.patient_id] || "กำลังโหลด..." }}</strong>:
+            <!-- <strong>{{ patientNames[patientItem.patient_id] || "กำลังโหลด..." }}</strong> -->
+            <router-link :to="`/patient/${patientItem.patient_id}`" class="text-blue-900 hover:underline">
+              <strong>{{ patientNames[patientItem.patient_id] || "กำลังโหลด..." }}</strong>
+            </router-link>
             <br>
             {{ patientItem.diagnosis }}
             <span v-if="patientItem.last_visit !== 'N/A'">
@@ -69,17 +61,17 @@
     </div>
 
     <!-- Fetched Doctors List -->
-    <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+    <!-- <div class="bg-white p-6 rounded-lg shadow-md mt-6">
       <h2 class="text-lg font-semibold text-gray-700">รายชื่อแพทย์</h2>
       <ul class="mt-3">
         <li v-for="(doctor, index) in doctors" :key="index" class="p-2 border-b">
           {{ doctor.name }} - {{ doctor.specialty }}
         </li>
       </ul>
-    </div>
+    </div> -->
   </div>
 
-  {{ doctor_REF }}
+  <!-- {{ doctor_REF }} -->
 
 </template>
 
