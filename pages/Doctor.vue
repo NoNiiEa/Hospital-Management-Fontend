@@ -139,7 +139,8 @@ onMounted(async () => {
 
 
 <style>
-body {
+body
+{
   font-family: "Noto Sans Thai", sans-serif;
 }
 </style>

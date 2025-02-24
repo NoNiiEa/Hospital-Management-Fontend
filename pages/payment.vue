@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="p-10 px-20">
+        <div class="p-8">
             <h1 class=" text-2xl font-bold mb-4">Payment Page</h1>
             <!-- Search Bar -->
             <input v-model="searchQuery" type="text" placeholder="Search patient by name..."

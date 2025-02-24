@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-blue-50 p-6 px-20">
+  <div class="min-h-screen bg-blue-50 p-6">
     <!-- Dashboard Header -->
     <div class="bg-white p-6 rounded-lg shadow-md">
       <h1 class="text-2xl font-bold text-blue-900">Dashboard</h1>

@@ -23,49 +23,29 @@
             <!-- icon add patient -->
             <div class="add-delete-right">
               <button v-on:click="addPatients">
-                <img
-                  src="@/assets/Images/add.png"
-                  :height="imagesize"
-                  :width="imagesize"
-                />
+                <img src="@/assets/Images/add.png" :height="imagesize" :width="imagesize" />
               </button>
               <!-- icon delete paitnet -->
               <button v-on:click="deletePatients">
-                <img
-                  src="@/assets/Images/minus.png"
-                  :height="imagesize"
-                  :width="imagesize"
-                />
+                <img src="@/assets/Images/minus.png" :height="imagesize" :width="imagesize" />
               </button>
             </div>
           </div>
           <ul>
             <li v-for="patient in patients" :key="patient.id">
-              <Card
-                :name="patient.name"
-                :id="patient.id"
-                type="patient"
-                @deleted="handleDeleted"
-              />
+              <Card :name="patient.name" :id="patient.id" type="patient" @deleted="handleDeleted" />
             </li>
           </ul>
           <!-- Add pagination controls -->
           <div class="pagination">
-            <button
-              :disabled="currentPage === 1"
-              @click="changePage(currentPage - 1)"
-              class="pagination-btn"
-            >
+            <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)" class="pagination-btn">
               Previous
             </button>
             <span class="page-info">
               Page {{ currentPage }} of {{ totalPatientPages }}
             </span>
-            <button
-              :disabled="currentPage === totalPatientPages"
-              @click="changePage(currentPage + 1)"
-              class="pagination-btn"
-            >
+            <button :disabled="currentPage === totalPatientPages" @click="changePage(currentPage + 1)"
+              class="pagination-btn">
               Next
             </button>
           </div>
@@ -78,49 +58,30 @@
             <!-- icon add medical personnel -->
             <div class="add-delete-right">
               <button v-on:click="addMedicalPersonnel">
-                <img
-                  src="@/assets/Images/add.png"
-                  :height="imagesize"
-                  :width="imagesize"
-                />
+                <img src="@/assets/Images/add.png" :height="imagesize" :width="imagesize" />
               </button>
               <!-- icon delete medical personnel -->
               <button v-on:click="deleteMedicalPersonnel">
-                <img
-                  src="@/assets/Images/minus.png"
-                  :height="imagesize"
-                  :width="imagesize"
-                />
+                <img src="@/assets/Images/minus.png" :height="imagesize" :width="imagesize" />
               </button>
             </div>
           </div>
           <ul>
             <li v-for="person in medicalPersonnel" :key="person.id">
-              <Card
-                :name="person.name"
-                :id="person.id"
-                type="doctor"
-                @deleted="handleDeleted"
-              />
+              <Card :name="person.name" :id="person.id" type="doctor" @deleted="handleDeleted" />
             </li>
           </ul>
           <!-- New pagination controls for Medical Personnel -->
           <div class="pagination">
-            <button
-              :disabled="currentDoctorPage === 1"
-              @click="changeDoctorPage(currentDoctorPage - 1)"
-              class="pagination-btn"
-            >
+            <button :disabled="currentDoctorPage === 1" @click="changeDoctorPage(currentDoctorPage - 1)"
+              class="pagination-btn">
               Previous
             </button>
             <span class="page-info">
               Page {{ currentDoctorPage }} of {{ totalDoctorPages }}
             </span>
-            <button
-              :disabled="currentDoctorPage === totalDoctorPages"
-              @click="changeDoctorPage(currentDoctorPage + 1)"
-              class="pagination-btn"
-            >
+            <button :disabled="currentDoctorPage === totalDoctorPages" @click="changeDoctorPage(currentDoctorPage + 1)"
+              class="pagination-btn">
               Next
             </button>
           </div>
@@ -175,45 +136,25 @@ export default {
     };
   },
   methods: {
+
     async fetchPatients() {
       try {
-        // Fetch patients for current page
-        const response = await fetch(
-          `http://127.0.0.1:8000/patients/limit/${this.currentPage}/${this.itemsPerPage}`,
-          {
-            headers: {
-              accept: "application/json",
-            },
-          }
+        // ดึงข้อมูลผู้ป่วยเฉพาะหน้าปัจจุบัน
+        const { data: patients } = await axios.get(
+          `http://127.0.0.1:8000/patients/limit/${this.currentPage}/${this.itemsPerPage}`
         );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const patients = await response.json();
         this.patients = patients.map(
           (patient) => new Patient(patient.id, patient.name)
         );
 
-        // Fetch total count of patients
-        const totalResponse = await fetch("http://127.0.0.1:8000/patients/", {
-          headers: {
-            accept: "application/json",
-          },
-        });
-
-        if (!totalResponse.ok) {
-          throw new Error(`HTTP error! status: ${totalResponse.status}`);
-        }
-
-        const totalPatients = await totalResponse.json();
-        this.totalPatientPages = Math.ceil(
-          totalPatients.length / this.itemsPerPage
+        // ดึงจำนวนผู้ป่วยทั้งหมด
+        const { data: totalPatients } = await axios.get(
+          "http://127.0.0.1:8000/patients/"
         );
+        this.totalPatientPages = Math.ceil(totalPatients.length / this.itemsPerPage);
       } catch (error) {
         console.error("Error fetching patients:", error);
-        this.totalPatientPages = 1; // Reset to 1 if there's an error
+        this.totalPatientPages = 1;
       }
     },
 
@@ -225,45 +166,23 @@ export default {
       }
     },
 
+
     async fetchMedicalPersonnel() {
       try {
-        // Fetch doctors for current doctor page
-        const response = await fetch(
-          `http://127.0.0.1:8000/doctors/limit/${this.currentDoctorPage}/${this.itemsPerDoctorPage}`,
-          {
-            headers: {
-              accept: "application/json",
-            },
-          }
+        // ดึงข้อมูลแพทย์เฉพาะหน้าปัจจุบัน
+        const { data: doctors } = await axios.get(
+          `http://127.0.0.1:8000/doctors/limit/${this.currentDoctorPage}/${this.itemsPerDoctorPage}`
         );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const doctors = await response.json();
         this.medicalPersonnel = doctors.map(
           (person) => new MedicalPersonnel(person.id, person.name)
         );
 
-        // Fetch total count of doctors
-        const totalDoctors = await fetch("http://127.0.0.1:8000/doctors/", {
-          headers: {
-            accept: "application/json",
-          },
-        });
-
-        if (!totalDoctors.ok) {
-          throw new Error(`HTTP error! status: ${totalDoctors.status}`);
-        }
-
-        const doctors_list = await totalDoctors.json();
-        this.totalDoctorPages = Math.ceil(
-          doctors_list.length / this.itemsPerDoctorPage
-        );
+        // ดึงจำนวนแพทย์ทั้งหมด
+        const { data: doctorsList } = await axios.get("http://127.0.0.1:8000/doctors/");
+        this.totalDoctorPages = Math.ceil(doctorsList.length / this.itemsPerDoctorPage);
       } catch (error) {
         console.error("Error fetching medical personnel:", error);
-        this.totalDoctorPages = 1; // Reset to 1 if there's an error
+        this.totalDoctorPages = 1; // รีเซ็ตเป็น 1 ถ้ามีข้อผิดพลาด
       }
     },
 
@@ -310,25 +229,29 @@ export default {
 </script>
 
 <style lang="css">
-.search-container {
+.search-container
+{
   margin: 2%;
   display: flex;
   flex-direction: column;
 }
 
-.search-box {
+.search-box
+{
   display: flex;
   justify-content: center;
   flex: 1;
 }
 
-.text-Dashboard {
+.text-Dashboard
+{
   margin: 1% 5%;
   font-size: xx-large;
   font-weight: bold;
 }
 
-.history-dashboard {
+.history-dashboard
+{
   background-color: #ffffff;
   display: flex;
   justify-content: space-between;
@@ -336,33 +259,39 @@ export default {
 }
 
 .history-dashboard .left,
-.history-dashboard .right {
+.history-dashboard .right
+{
   flex: 1;
   margin: 10px 2%;
 }
 
-.space {
+.space
+{
   padding: 2% 4%;
 }
 
-.head-card {
+.head-card
+{
   margin-top: 3%;
   margin-bottom: 5%;
   font-size: x-large;
   font-weight: bold;
 }
 
-.button-add-delete {
+.button-add-delete
+{
   display: flex;
 }
 
-.add-delete-right {
+.add-delete-right
+{
   margin-left: auto;
   display: flex;
   gap: 10px;
 }
 
-.pagination {
+.pagination
+{
   display: flex;
   justify-content: center;
   align-items: center;
@@ -370,7 +299,8 @@ export default {
   gap: 20px;
 }
 
-.pagination-btn {
+.pagination-btn
+{
   padding: 8px 16px;
   background-color: #2563eb;
   color: white;
@@ -379,16 +309,19 @@ export default {
   cursor: pointer;
 }
 
-.pagination-btn:disabled {
+.pagination-btn:disabled
+{
   background-color: #93c5fd;
   cursor: not-allowed;
 }
 
-.pagination-btn:hover:not(:disabled) {
+.pagination-btn:hover:not(:disabled)
+{
   background-color: #1d4ed8;
 }
 
-.page-info {
+.page-info
+{
   font-size: 14px;
   color: #374151;
 }
