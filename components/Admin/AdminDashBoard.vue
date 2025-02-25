@@ -143,6 +143,10 @@ class Patient {
   }
 }
 
+// class Appointment{
+  
+// }
+
 class MedicalPersonnel {
   constructor(id, name) {
     this.id = id;
