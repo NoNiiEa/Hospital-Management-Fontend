@@ -48,8 +48,10 @@
 export default {
   data() {
     return {
-      patient: null
-    }
+      patient: null,
+      // Add fromDoctor to track if we came from doctor's page
+      fromDoctor: null
+    };
   },
   methods: {
     formatDate(date) {
@@ -57,10 +59,12 @@ export default {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
-      })
+      });
     },
     goBack() {
-      this.$router.push('/admin')
+      // Check if we have fromDoctor in the route query
+      const doctorId = this.$route.query.from;
+      this.$router.push(`/medical/${doctorId}`);
     },
     async fetchPatientData() {
       try {
@@ -78,35 +82,40 @@ export default {
   mounted() {
     this.fetchPatientData();
   }
-}
+};
 </script>
 
 <style scoped>
-.detail-page {
+.detail-page
+{
   min-height: 100vh;
   background: #f0f4f8;
   padding: 2rem;
 }
 
-.detail-container {
+.detail-container
+{
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.header-section {
+.header-section
+{
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 }
 
-h1 {
+h1
+{
   color: #1a365d;
   font-size: 2.5rem;
   font-weight: 700;
 }
 
-.back-button {
+.back-button
+{
   background: #2b6cb0;
   color: white;
   padding: 0.75rem 1.5rem;
@@ -117,24 +126,28 @@ h1 {
   transition: background 0.3s;
 }
 
-.back-button:hover {
+.back-button:hover
+{
   background: #2c5282;
 }
 
-.info-grid {
+.info-grid
+{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
 }
 
-.info-card {
+.info-card
+{
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.info-card h2 {
+.info-card h2
+{
   color: #2d3748;
   margin-bottom: 1.5rem;
   font-size: 1.5rem;
@@ -142,35 +155,41 @@ h1 {
   padding-bottom: 0.5rem;
 }
 
-.info-content p {
+.info-content p
+{
   margin: 1rem 0;
   font-size: 1.1rem;
 }
 
-.info-content span {
+.info-content span
+{
   color: #4a5568;
   font-weight: 600;
   margin-right: 0.5rem;
 }
 
-.history-list {
+.history-list
+{
   display: grid;
   gap: 1rem;
 }
 
-.history-item {
+.history-item
+{
   background: #f8fafc;
   padding: 1rem;
   border-radius: 8px;
   border-left: 4px solid #4299e1;
 }
 
-.history-item h3 {
+.history-item h3
+{
   color: #2b6cb0;
   margin-bottom: 0.5rem;
 }
 
-.loading {
+.loading
+{
   text-align: center;
   padding: 2rem;
   font-size: 1.2rem;

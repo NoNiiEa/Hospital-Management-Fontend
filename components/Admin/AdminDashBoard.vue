@@ -2,9 +2,27 @@
   <div>
     <!-- Search box -->
     <div class="search-container">
-      <div></div>
       <div class="search-box">
-        <input type="text" v-model="input" placeholder="Search..." />
+
+        <form class="max-w-md mx-auto">
+          <label for="default-search"
+            class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+              </svg>
+            </div>
+            <input type="search" id="default-search" v-model="search_input"
+              class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="Search Mockups, Logos..." required />
+            <button type="submit"
+              class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Search</button>
+          </div>
+        </form>
+
       </div>
     </div>
 
@@ -51,6 +69,11 @@
           </div>
         </div>
 
+        <!-- Where you display patients -->
+        <div v-for="patient in filteredPatients" :key="patient.id">
+          <!-- patient display content -->
+        </div>
+
         <!-- Recent History right - Medical Personnel -->
         <div class="right">
           <div class="button-add-delete">
@@ -86,13 +109,17 @@
             </button>
           </div>
         </div>
+
+        <!-- Where you display medical personnel -->
+        <div v-for="person in filteredMedicalPersonnel" :key="person.id">
+          <!-- medical personnel display content -->
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
 import Card from "../Card.vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
@@ -103,7 +130,6 @@ class Patient {
     this.name = name;
   }
 }
-
 class MedicalPersonnel {
   constructor(id, name) {
     this.id = id;
@@ -122,6 +148,11 @@ export default {
   },
   data() {
     return {
+      // Add this new property to store all patients
+      allPatients: [],
+      // Add this new property to store all medical personnel
+      allMedicalPersonnel: [],
+      // Keep existing properties
       patients: [],
       medicalPersonnel: [],
       input: "",
@@ -133,63 +164,108 @@ export default {
       currentDoctorPage: 1,
       totalDoctorPages: 10,
       itemsPerDoctorPage: 10,
+      search_input: ""
     };
+  },
+  computed: {
+    // First filter all patients by search term
+    filteredPatients() {
+      if (!this.search_input || !this.allPatients) return this.allPatients || [];
+
+      return this.allPatients.filter(patient =>
+        patient.name.toLowerCase().includes(this.search_input.toLowerCase())
+      );
+    },
+
+    // Update the filteredMedicalPersonnel computed property
+    filteredMedicalPersonnel() {
+      if (!this.search_input || !this.allMedicalPersonnel) return this.allMedicalPersonnel || [];
+
+      return this.allMedicalPersonnel.filter(person =>
+        person.name.toLowerCase().includes(this.search_input.toLowerCase())
+      );
+    }
   },
   methods: {
 
     async fetchPatients() {
       try {
-        // ดึงข้อมูลผู้ป่วยเฉพาะหน้าปัจจุบัน
-        const { data: patients } = await axios.get(
-          `http://127.0.0.1:8000/patients/limit/${this.currentPage}/${this.itemsPerPage}`
-        );
-        this.patients = patients.map(
+        // Fetch ALL patients at once
+        const { data: allPatients } = await axios.get("http://127.0.0.1:8000/patients/");
+
+        // Store all patients
+        this.allPatients = allPatients.map(
           (patient) => new Patient(patient.id, patient.name)
         );
 
-        // ดึงจำนวนผู้ป่วยทั้งหมด
-        const { data: totalPatients } = await axios.get(
-          "http://127.0.0.1:8000/patients/"
-        );
-        this.totalPatientPages = Math.ceil(totalPatients.length / this.itemsPerPage);
+        // Update total pages based on all patients
+        this.totalPatientPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage);
+
+        // Update current page patients
+        this.updateCurrentPagePatients();
       } catch (error) {
         console.error("Error fetching patients:", error);
+        this.allPatients = [];
+        this.patients = [];
         this.totalPatientPages = 1;
       }
     },
 
+    // Add this new method to update current page patients
+    updateCurrentPagePatients() {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      this.patients = this.filteredPatients.slice(startIndex, endIndex);
+    },
+
     async changePage(newPage) {
-      // Changed from totalPages to totalPatientPages
-      if (newPage >= 1 && newPage <= this.totalPatientPages) {
+      // Calculate max pages based on filtered results
+      const maxPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage) || 1;
+
+      if (newPage >= 1 && newPage <= maxPages) {
         this.currentPage = newPage;
-        await this.fetchPatients();
+        this.updateCurrentPagePatients();
       }
     },
 
 
     async fetchMedicalPersonnel() {
       try {
-        // ดึงข้อมูลแพทย์เฉพาะหน้าปัจจุบัน
-        const { data: doctors } = await axios.get(
-          `http://127.0.0.1:8000/doctors/limit/${this.currentDoctorPage}/${this.itemsPerDoctorPage}`
-        );
-        this.medicalPersonnel = doctors.map(
-          (person) => new MedicalPersonnel(person.id, person.name)
+        // Fetch ALL doctors at once
+        const { data: allDoctors } = await axios.get("http://127.0.0.1:8000/doctors/");
+
+        // Store all doctors
+        this.allMedicalPersonnel = allDoctors.map(
+          (doctor) => new MedicalPersonnel(doctor.id, doctor.name)
         );
 
-        // ดึงจำนวนแพทย์ทั้งหมด
-        const { data: doctorsList } = await axios.get("http://127.0.0.1:8000/doctors/");
-        this.totalDoctorPages = Math.ceil(doctorsList.length / this.itemsPerDoctorPage);
+        // Update total pages based on all doctors
+        this.totalDoctorPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage);
+
+        // Update current page doctors
+        this.updateCurrentPageMedicalPersonnel();
       } catch (error) {
         console.error("Error fetching medical personnel:", error);
-        this.totalDoctorPages = 1; // รีเซ็ตเป็น 1 ถ้ามีข้อผิดพลาด
+        this.allMedicalPersonnel = [];
+        this.medicalPersonnel = [];
+        this.totalDoctorPages = 1;
       }
     },
 
+    // Add this new method for updating current page medical personnel
+    updateCurrentPageMedicalPersonnel() {
+      const startIndex = (this.currentDoctorPage - 1) * this.itemsPerDoctorPage;
+      const endIndex = startIndex + this.itemsPerDoctorPage;
+      this.medicalPersonnel = this.filteredMedicalPersonnel.slice(startIndex, endIndex);
+    },
+
     async changeDoctorPage(newPage) {
-      if (newPage >= 1 && newPage <= this.totalDoctorPages) {
+      // Calculate max pages based on filtered results
+      const maxPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage) || 1;
+
+      if (newPage >= 1 && newPage <= maxPages) {
         this.currentDoctorPage = newPage;
-        await this.fetchMedicalPersonnel();
+        this.updateCurrentPageMedicalPersonnel();
       }
     },
 
@@ -207,13 +283,32 @@ export default {
     },
     handleDeleted({ id, type }) {
       if (type === "patient") {
-        this.patients = this.patients.filter((patient) => patient.id !== id);
+        // Remove from allPatients array
+        this.allPatients = this.allPatients.filter((patient) => patient.id !== id);
+        // Recalculate totalPatientPages and update current page
+        this.totalPatientPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage) || 1;
+        this.updateCurrentPagePatients();
       } else {
-        this.medicalPersonnel = this.medicalPersonnel.filter(
-          (person) => person.id !== id
-        );
+        // Remove from allMedicalPersonnel array
+        this.allMedicalPersonnel = this.allMedicalPersonnel.filter((person) => person.id !== id);
+        // Recalculate totalDoctorPages and update current page
+        this.totalDoctorPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage) || 1;
+        this.updateCurrentPageMedicalPersonnel();
       }
     },
+  },
+  watch: {
+    search_input() {
+      // Reset to first page for patients
+      this.currentPage = 1;
+      this.totalPatientPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage) || 1;
+      this.updateCurrentPagePatients();
+
+      // Reset to first page for medical personnel
+      this.currentDoctorPage = 1;
+      this.totalDoctorPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage) || 1;
+      this.updateCurrentPageMedicalPersonnel();
+    }
   },
   mounted() {
     // Check if we need to refresh
@@ -238,7 +333,6 @@ export default {
 
 .search-box
 {
-  display: flex;
   justify-content: center;
   flex: 1;
 }
