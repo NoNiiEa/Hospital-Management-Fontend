@@ -64,7 +64,7 @@ export default {
     goBack() {
       // Check if we have fromDoctor in the route query
       const doctorId = this.$route.query.from;
-      this.$router.push(`/medical/${doctorId}`);
+      this.$router.push(`/admin`);
     },
     async fetchPatientData() {
       try {

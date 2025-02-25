@@ -59,26 +59,13 @@
 
 
     </div>
-
-    <!-- Fetched Doctors List -->
-    <!-- <div class="bg-white p-6 rounded-lg shadow-md mt-6">
-      <h2 class="text-lg font-semibold text-gray-700">รายชื่อแพทย์</h2>
-      <ul class="mt-3">
-        <li v-for="(doctor, index) in doctors" :key="index" class="p-2 border-b">
-          {{ doctor.name }} - {{ doctor.specialty }}
-        </li>
-      </ul>
-    </div> -->
   </div>
-
-  <!-- {{ doctor_REF }} -->
 
 </template>
 
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router"; // Import for route params
 
 const doctors = ref([]);
 const doctor_REF = ref(null);
