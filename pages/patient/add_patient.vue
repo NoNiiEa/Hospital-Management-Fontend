@@ -205,9 +205,12 @@ export default {
 }
 
 .page-title {
-  margin-bottom: 2rem;
+  font-family: var(--font-primary);
+  font-size: 2rem;
+  font-weight: 600;
   color: #333;
-  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  letter-spacing: -0.5px;
 }
 
 .patient-form {
@@ -222,19 +225,30 @@ export default {
   border-radius: 4px;
 }
 
+.form-section h3 {
+  font-family: var(--font-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
 .form-group {
   margin-bottom: 15px;
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+  font-family: var(--font-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4a5568;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
+  font-family: var(--font-secondary);
+  font-size: 0.875rem;
   width: 100%;
   padding: 8px;
   border: 1px solid #ddd;
@@ -258,6 +272,11 @@ export default {
 .cancel-btn,
 .add-btn,
 .remove-btn {
+  font-family: var(--font-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   padding: 8px 16px;
   border: none;
   border-radius: 4px;

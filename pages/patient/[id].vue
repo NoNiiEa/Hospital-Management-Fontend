@@ -162,6 +162,10 @@ export default {
   data() {
     return {
       patient: null,
+
+      // Add fromDoctor to track if we came from doctor's page
+      fromDoctor: null
+      
       appointments: [],
       prescriptions: [],
       medicationHistory: [],
@@ -177,14 +181,17 @@ export default {
   },
   methods: {
     formatDate(date) {
-      return new Date(date).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric"
+    
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       });
     },
     goBack() {
-      this.$router.push("/admin");
+      // Check if we have fromDoctor in the route query
+      const doctorId = this.$route.query.from;
+      this.$router.push(`/admin`);
     },
     async fetchPatientData() {
       try {
@@ -311,6 +318,7 @@ export default {
   font-family: Arial, sans-serif;
 }
 
+
 /* Container */
 .detail-container {
   max-width: 1100px;
@@ -320,6 +328,7 @@ export default {
   padding: 2rem;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
 }
+
 
 /* Header */
 .header-section {
@@ -334,7 +343,8 @@ export default {
   color: #1a365d;
 }
 
-.back-button {
+.back-button
+{
   background: #2b6cb0;
   color: #fff;
   border: none;
@@ -344,10 +354,12 @@ export default {
   transition: background 0.3s, transform 0.2s;
 }
 
-.back-button:hover {
+.back-button:hover
+{
   background: #2c5282;
   transform: scale(1.05);
 }
+
 
 /* Grid Layout */
 .info-grid {
@@ -355,6 +367,7 @@ export default {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
 }
+
 
 /* Resizable Cards */
 .info-card {
@@ -379,6 +392,7 @@ export default {
 
 .info-card h2 {
   margin-bottom: 1rem;
+
   font-size: 1.5rem;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.5rem;
@@ -422,12 +436,22 @@ export default {
 /* List Items */
 .list-item {
   background: #ffffff;
+
   padding: 1rem;
   border-radius: 8px;
   border-left: 4px solid #4299e1;
   margin-bottom: 0.8rem;
 }
 
+
+.history-item h3
+{
+  color: #2b6cb0;
+  margin-bottom: 0.5rem;
+}
+
+.loading
+{
 .list-item p {
   margin: 0.3rem 0;
 }
