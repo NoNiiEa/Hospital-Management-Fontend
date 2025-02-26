@@ -33,6 +33,6 @@ export default {};
 
 .right-side {
 	flex: 1;
-	background-color: #e3edf9;
+	background-color: #f0f4f8;
 }
 </style>

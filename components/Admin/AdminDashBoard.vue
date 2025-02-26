@@ -1,34 +1,28 @@
 <template lang="html">
   <div>
-    <!-- Search box -->
-    <div class="search-container">
-      <div class="search-box">
-
-        <form class="max-w-md mx-auto">
-          <label for="default-search"
-            class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-              <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-              </svg>
+    <!-- Dashboard header with search -->
+    <div class="dashboard-header">
+      <h1 class="text-Dashboard">Dashboard</h1>
+      <div class="search-container">
+        <div class="search-box">
+          <form class="max-w-md mx-auto">
+            <label for="default-search"
+              class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                </svg>
+              </div>
+              <input type="search" id="default-search" v-model="search_input"
+                class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-white-700 dark:border-white-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                placeholder="Search Name" required />
             </div>
-            <input type="search" id="default-search" v-model="search_input"
-              class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              placeholder="Search Mockups, Logos..." required />
-            <button type="submit"
-              class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Search</button>
-          </div>
-        </form>
-
+          </form>
+        </div>
       </div>
-    </div>
-
-    <!-- Dashboard -->
-    <div>
-      <h2 class="text-Dashboard">Dashboard</h2>
     </div>
 
     <!-- Recent History -->
@@ -37,15 +31,15 @@
         <!-- Recent History left - Patients -->
         <div class="left">
           <div class="button-add-delete">
-            <h3 class="head-card">Patient</h3>
+            <h3 class="head-card">Patients</h3>
             <!-- icon add patient -->
             <div class="add-delete-right">
-              <button v-on:click="addPatients">
-                <img src="@/assets/Images/add.png" :height="imagesize" :width="imagesize" />
+              <button v-on:click="addPatients" class="add-docter">
+                Add
               </button>
               <!-- icon delete paitnet -->
-              <button v-on:click="deletePatients">
-                <img src="@/assets/Images/minus.png" :height="imagesize" :width="imagesize" />
+              <button v-on:click="deletePatients" class="delete-docter">
+                Delete
               </button>
             </div>
           </div>
@@ -77,15 +71,15 @@
         <!-- Recent History right - Medical Personnel -->
         <div class="right">
           <div class="button-add-delete">
-            <h3 class="head-card">Medical Personnel</h3>
+            <h3 class="head-card">Medical Personnels</h3>
             <!-- icon add medical personnel -->
             <div class="add-delete-right">
-              <button v-on:click="addMedicalPersonnel">
-                <img src="@/assets/Images/add.png" :height="imagesize" :width="imagesize" />
+              <button v-on:click="addMedicalPersonnel" class="add-docter">
+                Add
               </button>
               <!-- icon delete medical personnel -->
-              <button v-on:click="deleteMedicalPersonnel">
-                <img src="@/assets/Images/minus.png" :height="imagesize" :width="imagesize" />
+              <button v-on:click="deleteMedicalPersonnel" class="delete-docter">
+                Delete
               </button>
             </div>
           </div>
@@ -325,6 +319,7 @@ export default {
 </script>
 
 <style lang="css">
+
 .search-container
 {
   margin: 2%;
@@ -338,11 +333,13 @@ export default {
   flex: 1;
 }
 
-.text-Dashboard
-{
-  margin: 1% 5%;
-  font-size: xx-large;
-  font-weight: bold;
+/* Update existing styles */
+.text-Dashboard {
+  font-family: var(--font-primary);
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #1a365d;
+  letter-spacing: -0.5px;
 }
 
 .history-dashboard
@@ -365,12 +362,13 @@ export default {
   padding: 2% 4%;
 }
 
-.head-card
-{
+/* Update existing styles */
+.head-card {
+  font-family: var(--font-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
   margin-top: 3%;
   margin-bottom: 5%;
-  font-size: x-large;
-  font-weight: bold;
 }
 
 .button-add-delete
@@ -381,7 +379,7 @@ export default {
 .add-delete-right
 {
   margin-left: auto;
-  display: flex;
+  /* display: flex; */
   gap: 10px;
 }
 
@@ -394,30 +392,167 @@ export default {
   gap: 20px;
 }
 
-.pagination-btn
-{
+/* Update existing styles */
+.pagination-btn {
+  font-family: var(--font-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   padding: 8px 16px;
-  background-color: #2563eb;
+  background-color: #496d96;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Shadow effect */
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.pagination-btn:hover {
+    box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.4); /* Stronger shadow on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+}
+
+.pagination-btn:active {
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Smaller shadow when clicked */
+    transform: translateY(1px); /* Pressed effect */
 }
 
 .pagination-btn:disabled
 {
-  background-color: #93c5fd;
+  background-color: #d0e3f9;
   cursor: not-allowed;
 }
 
-.pagination-btn:hover:not(:disabled)
-{
-  background-color: #1d4ed8;
+/* Update existing styles */
+.page-info {
+  font-family: var(--font-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.page-info
-{
-  font-size: 14px;
-  color: #374151;
+.add-docter {
+    font-family: var(--font-secondary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+    background-color: transparent; /* No background */
+    color: 	#2E8B57; /* Green text */
+    padding: 5px 20px;
+    margin: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px solid 	#2E8B57; /* Green border */
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
 }
+
+/* Hover Effect */
+.add-docter:hover {
+    background-color: 	#2E8B57; /* Fill background */
+    color: white; /* White text */
+}
+
+/* Click (Active) Effect */
+.add-docter:active {
+    opacity: 0.7; /* Light fade effect */
+}
+
+.delete-docter {
+    font-family: var(--font-secondary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+    background-color: transparent; /* No background */
+    color: #D70040; /* Red text */
+    padding: 5px 12px;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px solid #D70040; /* Red border */
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Hover Effect */
+.delete-docter:hover {
+    background-color: #D70040; /* Fill background */
+    color: white; /* White text */
+}
+
+/* Click (Active) Effect */
+.delete-docter:active {
+    opacity: 0.7; /* Light fade effect */
+}
+
+/* Add these new styles at the end of your style section */
+#default-search {
+  font-family: var(--font-secondary);
+  font-size: 0.875rem;
+  transition: all 0.3s ease-in-out;
+  transform-origin: center;
+}
+
+#default-search:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#default-search:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  border-color: #3b82f6;
+}
+
+.search-container {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add animation for the search icon */
+.absolute svg {
+  transition: all 0.3s ease;
+}
+
+#default-search:focus + .absolute svg,
+#default-search:hover + .absolute svg {
+  transform: scale(1.1);
+  color: #3b82f6;
+}
+
+/* Add or modify these styles */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2%;
+  margin: 40px;
+}
+
+.text-Dashboard {
+  margin: 0;  /* Remove existing margins */
+  font-size: 40px;
+  font-weight: bold;
+  color: #1a365d;
+}
+
+.search-container {
+  margin: 0;  /* Remove existing margins */
+  flex: 1;
+  max-width: 500px;
+  margin-left: 200px;
+}
+
 </style>

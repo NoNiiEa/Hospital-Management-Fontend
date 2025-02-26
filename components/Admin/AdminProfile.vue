@@ -5,7 +5,7 @@
     <!-- Profile -->
     <div class="profile-card">
       <div class="profile-image-container">
-        <img src="@/assets/Images/DC.png" alt="Admin Profile Image" class="profile-image" />
+        <img src="@/assets/Images/inwnot.png" alt="Admin Profile Image" class="profile-image" />
       </div>
       <div class="profile-details">
         <!-- name -->
