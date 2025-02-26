@@ -125,6 +125,7 @@ class Patient {
     this.name = name;
   }
 }
+
 class MedicalPersonnel {
   constructor(id, name) {
     this.id = id;
