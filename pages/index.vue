@@ -48,7 +48,7 @@ export default {
         },
         goToDoctor ()
         {
-            this.$router.push(`/medical/${this.doctor_id}`);
+            this.$router.push(`/doctor/${this.doctor_id}`);
         }
     }
 };

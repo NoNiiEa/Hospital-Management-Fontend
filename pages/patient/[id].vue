@@ -206,7 +206,8 @@ export default {
     async fetchAppointments() {
       try {
         const response = await fetch("http://127.0.0.1:8000/appointments/");
-        this.appointments = await response.json();
+        const allAppointments = await response.json();
+        this.appointments = allAppointments.filter(appointment => appointment.patient_id === this.$route.params.id);
       } catch (error) {
         console.error("Error fetching appointments:", error);
       }

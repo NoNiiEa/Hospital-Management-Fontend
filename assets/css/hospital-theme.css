@@ -1,0 +1,117 @@
+:root {
+  /* Primary Colors */
+  --hospital-primary: #2563eb;    /* Medical Blue */
+  --hospital-secondary: #16a34a;  /* Health Green */
+  --hospital-accent: #ef4444;     /* Emergency Red */
+  
+  /* Neutral Colors */
+  --hospital-white: #ffffff;
+  --hospital-light: #f8fafc;
+  --hospital-gray-100: #f1f5f9;
+  --hospital-gray-200: #e2e8f0;
+  --hospital-gray-300: #cbd5e1;
+  --hospital-gray-400: #94a3b8;
+  --hospital-gray-500: #64748b;
+  --hospital-gray-600: #475569;
+  --hospital-gray-700: #334155;
+  --hospital-gray-800: #1e293b;
+  --hospital-gray-900: #0f172a;
+
+  /* Status Colors */
+  --status-success: #15803d;
+  --status-warning: #eab308;
+  --status-error: #dc2626;
+  --status-info: #0ea5e9;
+
+  /* Component Colors */
+  --button-primary: var(--hospital-primary);
+  --button-secondary: var(--hospital-secondary);
+  --button-danger: var(--hospital-accent);
+  
+  /* Background Colors */
+  --bg-primary: var(--hospital-white);
+  --bg-secondary: var(--hospital-light);
+  --bg-tertiary: var(--hospital-gray-100);
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/* Global Styles */
+body {
+  background-color: var(--bg-secondary);
+  color: var(--hospital-gray-800);
+}
+
+/* Card Styles */
+.hospital-card {
+  background-color: var(--bg-primary);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--hospital-gray-200);
+  transition: all 0.3s ease;
+}
+
+.hospital-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Button Styles */
+.hospital-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.hospital-btn-primary {
+  background-color: var(--button-primary);
+  color: white;
+}
+
+.hospital-btn-secondary {
+  background-color: var(--button-secondary);
+  color: white;
+}
+
+.hospital-btn-danger {
+  background-color: var(--button-danger);
+  color: white;
+}
+
+/* Input Styles */
+.hospital-input {
+  border: 1px solid var(--hospital-gray-300);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.hospital-input:focus {
+  border-color: var(--hospital-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Table Styles */
+.hospital-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.hospital-table th {
+  background-color: var(--hospital-gray-100);
+  color: var(--hospital-gray-700);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.hospital-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--hospital-gray-200);
+}
