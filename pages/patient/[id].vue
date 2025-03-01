@@ -76,7 +76,7 @@
           <!-- Doctor Name Input -->
 
           <label>Doctor ID:</label>
-          <input type="text" v-model="newAppointment.doctor_id" placeholder="67b3035e4aa1f361628ad2a3" />
+          <input type="text" v-model="newAppointment.doctor_id" placeholder="{{doctor_id}} || 'Enter doctor ID'" />
           <label>Date:</label>
           <input type="date" v-model="newAppointment.date" />
           <label>Time:</label>
@@ -170,11 +170,19 @@ export default {
       showAppointmentForm: false,
       showPrescriptionForm: false,
       showMedicalHistory: false,
-      newAppointment: { patient_id: this.$route.params.id, doctor_id: "67b3035e4aa1f361628ad2a3", date: '', time: '', status: 'Pending', remarkes: '' },
+      // newAppointment: { patient_id: this.$route.params.id, doctor_id: "67b3035e4aa1f361628ad2a3", date: '', time: '', status: 'Pending', remarkes: '' },
       newPrescription: {
         date: "",
         medications: [{ name: "", dosage: "", frequency: "", duration: "" }]
-      }
+      },
+      newAppointment: { 
+      patient_id: this.$route.params.id, 
+      doctor_id: this.$route.query.from || "", // Use doctor_id from route query
+      date: '', 
+      time: '', 
+      status: 'Pending', 
+      remarks: '' // Fixed typo from 'remarkes'
+    }
     };
   },
   methods: {
