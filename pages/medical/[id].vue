@@ -18,14 +18,10 @@
       <div class="detail-section">
         <h3>Patients</h3>
         <div v-if="doctor.patients?.length" class="patients-list">
-          <Card
-            v-for="patient in patientsWithDetails"
-            :key="patient.patient_id"
-            :id="patient.patient_id"
+          <Card v-for="patient in patientsWithDetails" :key="patient.patient_id" :id="patient.patient_id"
             :name="`${patient.name || 'Loading...'} - ${patient.diagnosis}`"
-            type="patient"
-            @deleted="handlePatientDeleted"
-          />
+            :to="`/patient/${patient.patient_id}?from=${$route.params.id}`" type="patient"
+            @deleted="handlePatientDeleted" />
         </div>
         <div v-else>No patients assigned</div>
       </div>
@@ -131,7 +127,8 @@ export default {
 </script>
 
 <style scoped>
-.medical-details {
+.medical-details
+{
   max-width: 800px;
   margin: 2rem auto;
   padding: 2rem;
@@ -140,41 +137,48 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.detail-section {
+.detail-section
+{
   margin-bottom: 2rem;
   padding: 1rem;
   border: 1px solid #eee;
   border-radius: 4px;
 }
 
-h2 {
+h2
+{
   color: #2563eb;
   margin-bottom: 2rem;
 }
 
-h3 {
+h3
+{
   color: #374151;
   margin-bottom: 1rem;
 }
 
-.patients-list {
+.patients-list
+{
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.patient-item {
+.patient-item
+{
   padding: 1rem;
   background: #f8fafc;
   border-radius: 4px;
   margin-bottom: 0.5rem;
 }
 
-.patient-item p {
+.patient-item p
+{
   margin: 0.5rem 0;
 }
 
-.back-btn {
+.back-btn
+{
   margin-top: 2rem;
   padding: 0.5rem 1rem;
   background: #2563eb;
@@ -184,11 +188,13 @@ h3 {
   cursor: pointer;
 }
 
-.back-btn:hover {
+.back-btn:hover
+{
   background: #1d4ed8;
 }
 
-.error-message {
+.error-message
+{
   color: #dc2626;
   padding: 1rem;
   margin: 1rem 0;

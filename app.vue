@@ -10,19 +10,19 @@
   </div>
 </template>
 
-
 <script>
-	import Doctor from '@/pages/Doctor.vue';
-	import Admin from '@/pages/Admin.vue';
-	import Login from '@/pages/Login.vue'; 
+import './assets/css/main.css'
+import Doctor from '@/pages/Doctor.vue';
+import Admin from '@/pages/Admin.vue';
+import Login from '@/pages/Login.vue'; 
 
-	export default {
-		components: {
-			Doctor,
-			Admin,
-			Login, 
-		},
-	};
+export default {
+  components: {
+    Doctor,
+    Admin,
+    Login, 
+  },
+};
 </script>
 
 <style lang=""></style>

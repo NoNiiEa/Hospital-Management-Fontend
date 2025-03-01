@@ -78,7 +78,7 @@ export default {
           const route =
             this.type === "patient"
               ? `/patient/${this.id}`
-              : `/medical/${this.id}`;
+              : `/doctor/${this.id}`;
           this.$router.push(route);
         }
       } catch (error) {
@@ -137,7 +137,7 @@ export default {
 }
 
 .box {
-  background-color: #e3edf9;
+  background-color: #ffffff;
   border-radius: 15px;
   margin: 2% 0%;
   display: flex;
@@ -145,28 +145,62 @@ export default {
   align-items: center;
   padding: 2%;
   cursor: pointer;
+  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1), 
+                -1px -1px 1px rgba(0, 0, 0, 0.1),
+                1px -1px 1px rgba(0, 0, 0, 0.1),
+                -1px 1px 1px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, 
+              transform 0.3s ease, 
+              box-shadow 0.3s ease; /* Smooth transition */
 }
+
+.box:hover {
+    background-color: #ffffff;
+    transform: scale(1.1); /* Slightly increase size */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.box:active {
+    transform: scale(0.95); /* Slightly shrink */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 
 .text {
   padding: 2%;
 }
 
 .delete-button {
-  background-color: #f44336;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 12px;
-  border-radius: 5px;
-  cursor: pointer;
+    background-color: #D70040; /* Red background */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, 
+                box-shadow 0.3s ease, 
+                transform 0.3s ease; /* Smooth transition */
 }
 
+/* Hover Effect with Neon Glow */
 .delete-button:hover {
-  background-color: #da190b;
+    background-color: #FF3131; /* Lighter red */
+    box-shadow: 0 0 5px rgba(255, 49, 49, 0.6), 
+                0 0 10px rgba(255, 49, 49, 0.4); /* Softer neon effect */
+    transform: scale(1.05); /* Slightly enlarge */
 }
+
+/* Click (Active) Effect */
+.delete-button:active {
+    transform: scale(0.97); /* Slightly shrink */
+    box-shadow: 0 0 3px rgba(255, 49, 49, 0.4), 
+                0 0 6px rgba(255, 49, 49, 0.3); /* Even softer glow */
+}
+
 
 .modal {
   position: fixed;
