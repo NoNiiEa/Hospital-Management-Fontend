@@ -78,7 +78,7 @@ export default {
           const route =
             this.type === "patient"
               ? `/patient/${this.id}`
-              : `/medical/${this.id}`;
+              : `/doctor/${this.id}`;
           this.$router.push(route);
         }
       } catch (error) {

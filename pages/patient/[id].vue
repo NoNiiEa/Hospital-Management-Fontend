@@ -31,9 +31,17 @@
             <div v-for="(appointment, index) in appointments" :key="index" class="list-item">
               <p><span>Date:</span> {{ formatDate(appointment.date) }}</p>
               <p><span>Time:</span> {{ appointment.time }}</p>
-              <p :class="appointment.status === 'Pending' ? 'status-pending' : 'status-confirmed'">
-                {{ appointment.status }}
-              </p>
+              <div class="status-row">
+                <p :class="appointment.status === 'Pending' ? 'status-pending' : 'status-confirmed'">
+                  {{ appointment.status }}
+                </p>
+                <button 
+                  @click="toggleAppointmentStatus(appointment)" 
+                  class="status-toggle-button"
+                >
+                  {{ appointment.status === 'Pending' ? 'Confirm' : 'Set Pending' }}
+                </button>
+              </div>
               <p><span>Remarks:</span> {{ appointment.remarks }}</p>
             </div>
           </div>
@@ -109,7 +117,7 @@
       </div>
       <br>
 
-
+      <!-- <h1>{{ this }}</h1> -->
 
       <!-- Medical History -->
 
@@ -130,27 +138,17 @@
           <div v-if="patient.medical_history?.length">
 
             <div v-for="(history, index) in patient.medical_history" :key="index" class="history-item">
-
               <br>
-
               <h3>🩺 {{ history.disease }}</h3>
-
               <p><span>📅 Diagnosed:</span> {{ formatDate(history.diagnosed_date) }}</p>
-
               <p><span>💊 Treatment:</span> {{ history.treatment }}</p>
-
               <br>
-
               <hr>
-
             </div>
-
           </div>
-
           <p v-else class="no-data">No medical history available</p>
 
         </div>
-
       </div>
     </div>
   </div>
@@ -162,7 +160,7 @@ export default {
   data() {
     return {
       patient: null,
-
+      doctor_id: this.$route.query.from,
       // Add fromDoctor to track if we came from doctor's page
       fromDoctor: null,
 
@@ -192,6 +190,12 @@ export default {
       // Check if we have fromDoctor in the route query
       const doctorId = this.$route.query.from;
       this.$router.push(`/admin`);
+      if (this.doctor_id) {
+        this.$router.push(`/doctor/${this.doctor_id}`);
+      } else {
+        // Fallback to admin page if no doctor_id
+        this.$router.push('/admin');
+      }
     },
     async fetchPatientData() {
       try {
@@ -297,7 +301,39 @@ export default {
     },
     toggleMedicalHistory() {
       this.showMedicalHistory = !this.showMedicalHistory;
+    },
+    async toggleAppointmentStatus(appointment) {
+    try {
+      if (!appointment.id) {
+        throw new Error('Appointment ID is missing');
+      }
+
+      const newStatus = appointment.status === 'Pending' ? 'Confirmed' : 'Pending';
+      
+      const response = await fetch(`http://127.0.0.1:8000/appointments/${appointment.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        // Update the local appointment status
+        appointment.status = newStatus;
+        // Show success message
+        alert(`Appointment status updated to ${newStatus}`);
+        // Refresh appointments list
+        await this.fetchAppointments();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      alert('Failed to update appointment status: ' + error.message);
     }
+  }
   },
   mounted() {
     this.fetchPatientData();
@@ -312,8 +348,7 @@ export default {
 
 <style scoped>
 /* Page Background */
-.detail-page
-{
+.detail-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
   padding: 2rem;
@@ -322,8 +357,7 @@ export default {
 
 
 /* Container */
-.detail-container
-{
+.detail-container {
   max-width: 1100px;
   margin: 0 auto;
   background: #ffffff;
@@ -334,22 +368,19 @@ export default {
 
 
 /* Header */
-.header-section
-{
+.header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 }
 
-.header-section h1
-{
+.header-section h1 {
   font-size: 2.5rem;
   color: #1a365d;
 }
 
-.back-button
-{
+.back-button {
   background: #2b6cb0;
   color: #fff;
   border: none;
@@ -359,16 +390,14 @@ export default {
   transition: background 0.3s, transform 0.2s;
 }
 
-.back-button:hover
-{
+.back-button:hover {
   background: #2c5282;
   transform: scale(1.05);
 }
 
 
 /* Grid Layout */
-.info-grid
-{
+.info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
@@ -376,8 +405,7 @@ export default {
 
 
 /* Resizable Cards */
-.info-card
-{
+.info-card {
   min-height: 250px;
   /* Minimum height */
   max-height: 600px;
@@ -393,13 +421,11 @@ export default {
   /* Allows vertical resizing */
 }
 
-.info-card:hover
-{
+.info-card:hover {
   transform: translateY(-5px);
 }
 
-.info-card h2
-{
+.info-card h2 {
   margin-bottom: 1rem;
 
   font-size: 1.5rem;
@@ -411,8 +437,7 @@ export default {
 /* Scrollable Content Inside Cards */
 .info-content,
 .list,
-.history-list
-{
+.history-list {
   flex-grow: 1;
   /* Ensures it expands within the parent */
   overflow-y: auto;
@@ -422,16 +447,14 @@ export default {
 }
 
 /* Title Row for Cards with Add Button */
-.title-row
-{
+.title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 /* Add Button */
-.add-button
-{
+.add-button {
   background: #38a169;
   color: #fff;
   border: none;
@@ -441,14 +464,12 @@ export default {
   transition: background 0.3s;
 }
 
-.add-button:hover
-{
+.add-button:hover {
   background: #2f855a;
 }
 
 /* List Items */
-.list-item
-{
+.list-item {
   background: #ffffff;
 
   padding: 1rem;
@@ -458,21 +479,18 @@ export default {
 }
 
 
-.history-item h3
-{
+.history-item h3 {
   color: #2b6cb0;
   margin-bottom: 0.5rem;
 }
 
 
-.list-item p
-{
+.list-item p {
   margin: 0.3rem 0;
 }
 
 /* No Data Message */
-.no-data
-{
+.no-data {
   text-align: center;
   color: #a0aec0;
   font-style: italic;
@@ -480,8 +498,7 @@ export default {
 }
 
 /* Modal Styling */
-.modal
-{
+.modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -494,8 +511,7 @@ export default {
   z-index: 100;
 }
 
-.modal-content
-{
+.modal-content {
   background: #fff;
   border-radius: 12px;
   padding: 2rem;
@@ -506,14 +522,12 @@ export default {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
-.modal-content h2
-{
+.modal-content h2 {
   margin-bottom: 1.5rem;
   color: #2d3748;
 }
 
-.modal-content label
-{
+.modal-content label {
   display: block;
   margin: 0.5rem 0 0.2rem;
   font-weight: bold;
@@ -522,8 +536,7 @@ export default {
 
 .modal-content input,
 .modal-content select,
-.modal-content textarea
-{
+.modal-content textarea {
   width: 100%;
   padding: 0.6rem;
   border: 1px solid #cbd5e0;
@@ -531,15 +544,13 @@ export default {
   margin-bottom: 1rem;
 }
 
-.modal-buttons
-{
+.modal-buttons {
   display: flex;
   justify-content: space-between;
   margin-top: 1rem;
 }
 
-.save-button
-{
+.save-button {
   background: #3182ce;
   color: #fff;
   border: none;
@@ -548,8 +559,7 @@ export default {
   cursor: pointer;
 }
 
-.cancel-button
-{
+.cancel-button {
   background: #e53e3e;
   color: #fff;
   border: none;
@@ -558,23 +568,41 @@ export default {
   cursor: pointer;
 }
 
-.save-button:hover
-{
+.save-button:hover {
   background: #2b6cb0;
 }
 
-.cancel-button:hover
-{
+.cancel-button:hover {
   background: #c53030;
 }
 
-.status-pending
-{
+.status-pending {
   color: orange;
 }
 
-.status-confirmed
-{
+.status-confirmed {
   color: green;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.5rem 0;
+}
+
+.status-toggle-button {
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  border: none;
+  background: #4a5568;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.status-toggle-button:hover {
+  background: #2d3748;
 }
 </style>
