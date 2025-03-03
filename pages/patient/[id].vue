@@ -184,6 +184,31 @@
           <p v-else class="no-data">No admissions available</p>
         </div>
       </div>
+
+      <!-- Billing Card -->
+      <div class="info-card">
+        <div class="title-row">
+          <h2>💰 Billing</h2>
+          <div class="button-group">
+            <button @click="showBillingForm = true" class="add-button">+ Add</button>
+            <button @click="goToBillingPage" class="view-button">View All</button>
+          </div>
+        </div>
+        <div class="billing-list">
+          <div v-if="billings.length">
+            <div v-for="(billing, index) in billings" :key="index" class="billing-item">
+              <div class="billing-header">
+                <h3>🧾 Bill #{{ billing.id.slice(-5) }}</h3>
+                <span :class="getBillingStatusClass(billing.status)">{{ billing.status }}</span>
+              </div>
+              <p><strong>Amount:</strong> ${{ billing.total_amount }}</p>
+              <p><strong>Payment Method:</strong> {{ billing.payment_method || 'Not specified' }}</p>
+              <p><strong>Appointment ID:</strong> {{ billing.appointment_id }}</p>
+            </div>
+          </div>
+          <p v-else class="no-data">No billing records found</p>
+        </div>
+      </div>
     </div>
 
     <!-- Medical History Form Modal -->
@@ -224,6 +249,37 @@
         <div class="modal-buttons">
           <button @click="addAdmission" class="save-button">Save</button>
           <button @click="showAdmissionForm = false" class="cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Billing Form Modal -->
+    <div v-if="showBillingForm" class="modal">
+      <div class="modal-content">
+        <h2>Add Billing</h2>
+        <label>Appointment ID (optional):</label>
+        <input type="text" v-model="newBilling.appointment_id" placeholder="Enter appointment ID" />
+        <label>Total Amount ($):</label>
+        <input type="number" v-model.number="newBilling.total_amount" min="0" step="0.01" />
+        <label>Status:</label>
+        <select v-model="newBilling.status">
+          <option value="Paid">Paid</option>
+          <option value="Pending">Pending</option>
+          <option value="Overdue">Overdue</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Refunded">Refunded</option>
+        </select>
+        <label>Payment Method:</label>
+        <select v-model="newBilling.payment_method">
+          <option value="Credit Card">Credit Card</option>
+          <option value="Cash">Cash</option>
+          <option value="Insurance">Insurance</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Other">Other</option>
+        </select>
+        <div class="modal-buttons">
+          <button @click="addBilling" class="save-button">Save</button>
+          <button @click="showBillingForm = false" class="cancel-button">Cancel</button>
         </div>
       </div>
     </div>
@@ -281,6 +337,15 @@ export default {
         time: '',
         status: 'Pending',
         remarks: '' // Fixed typo from 'remarkes'
+      },
+      showBillingForm: false,
+      billings: [],
+      newBilling: {
+        patient_id: '',
+        appointment_id: '',
+        total_amount: 0,
+        status: 'Paid',
+        payment_method: 'Credit Card'
       }
     };
   },
@@ -580,6 +645,81 @@ export default {
         console.error('Error updating appointment status:', error);
         alert('Failed to update appointment status: ' + error.message);
       }
+    },
+    async fetchBillings() {
+      try {
+        console.log("Fetching billings for patient:", this.$route.params.id);
+        const response = await axios.get("http://127.0.0.1:8000/billings/");
+        console.log("Raw billing data:", response.data);
+
+        // Filter billings for current patient
+        this.billings = response.data.filter(billing =>
+          billing.patient_id === this.$route.params.id
+        );
+
+        console.log("Filtered billings:", this.billings);
+      } catch (error) {
+        console.error("Error fetching billings:", error);
+      }
+    },
+
+    async addBilling() {
+      try {
+        if (!this.newBilling.total_amount) {
+          alert("Please enter a valid amount");
+          return;
+        }
+
+        // Set patient ID from route
+        this.newBilling.patient_id = this.$route.params.id;
+
+        // If appointment ID is empty, set to N/A
+        if (!this.newBilling.appointment_id.trim()) {
+          this.newBilling.appointment_id = "N/A";
+        }
+
+        console.log("Adding billing:", this.newBilling);
+
+        // Send the request to create a new billing
+        const response = await axios.post(
+          "http://127.0.0.1:8000/billings/create",
+          this.newBilling
+        );
+
+        if (response.status === 201 || response.status === 200) {
+          // Add the new billing to local array
+          this.billings.push(response.data);
+
+          // Reset form and close modal
+          this.newBilling = {
+            patient_id: '',
+            appointment_id: '',
+            total_amount: 0,
+            status: 'Paid',
+            payment_method: 'Credit Card'
+          };
+          this.showBillingForm = false;
+
+          // Show success message
+          alert("Billing added successfully");
+        }
+      } catch (error) {
+        console.error("Error adding billing:", error);
+        alert("Failed to add billing: " + (error.response?.data?.detail || "Unknown error"));
+      }
+    },
+
+    getBillingStatusClass(status) {
+      switch (status) {
+        case 'Paid': return 'status-confirmed';
+        case 'Pending': return 'status-pending';
+        case 'Overdue': return 'status-overdue';
+        default: return '';
+      }
+    },
+
+    goToBillingPage() {
+      this.$router.push(`/billing/${this.$route.params.id}`);
     }
   },
   mounted() {
@@ -588,6 +728,7 @@ export default {
     this.fetchPrescriptions();
     this.fetchMedicationHistory();
     this.fetchAdmissions();
+    this.fetchBillings();
   }
 };
 </script>
@@ -893,6 +1034,58 @@ export default {
   margin-left: 1rem;
   padding: 0.5rem;
   border-left: 2px solid #4299e1;
+}
+
+/* Billing specific styles */
+.billing-item
+{
+  background: #ffffff;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #805ad5;
+  margin-bottom: 0.8rem;
+}
+
+.billing-header
+{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.billing-header h3
+{
+  margin: 0;
+  color: #4a5568;
+}
+
+.status-overdue
+{
+  color: red;
+  font-weight: bold;
+}
+
+.button-group
+{
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-button
+{
+  background: #4299e1;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.view-button:hover
+{
+  background: #3182ce;
 }
 
 /* Ensure axios is imported */
