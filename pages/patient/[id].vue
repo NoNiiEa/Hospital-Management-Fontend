@@ -35,10 +35,7 @@
                 <p :class="appointment.status === 'Pending' ? 'status-pending' : 'status-confirmed'">
                   {{ appointment.status }}
                 </p>
-                <button 
-                  @click="toggleAppointmentStatus(appointment)" 
-                  class="status-toggle-button"
-                >
+                <button @click="toggleAppointmentStatus(appointment)" class="status-toggle-button">
                   {{ appointment.status === 'Pending' ? 'Confirm' : 'Set Pending' }}
                 </button>
               </div>
@@ -126,6 +123,7 @@
         <div class="title-row">
 
           <h2>📜 Medical History</h2>
+          <button @click="showMedicalHistoryForm = true" class="add-button">+ Add</button>
 
         </div>
 
@@ -150,12 +148,91 @@
 
         </div>
       </div>
+
+      <!-- Admissions Card -->
+      <div class="info-card">
+        <div class="title-row">
+          <h2>🏥 Admissions</h2>
+          <button @click="showAdmissionForm = true" class="add-button">+ Add</button>
+        </div>
+        <div class="admission-list">
+          <div v-if="admissions.length">
+            <div v-for="(admission, index) in admissions" :key="index" class="history-item">
+              <br>
+              <h3>🛏️ {{ admission.admission_reason || 'No reason specified' }}</h3>
+              <p><span>📅 Admitted:</span> {{ formatDateSafe(admission.admission_date) }}</p>
+              <p><span>📆 Expected Discharge:</span> {{ formatDateSafe(admission.expected_discharge_date) }}</p>
+              <p v-if="admission.actual_discharge_date">
+                <span>🗓️ Actual Discharge:</span> {{ formatDateSafe(admission.actual_discharge_date) }}
+              </p>
+              <p><span>👨‍⚕️ Doctor ID:</span> {{ admission.doctor_id || 'Not assigned' }}</p>
+              <p><span>🏬 Department:</span> {{ admission.department || 'Not specified' }}</p>
+              <p><span>🏠 Ward:</span> {{ admission.ward || 'N/A' }} - Bed: {{ admission.bed_number || 'N/A' }}</p>
+              <p><span>📊 Status:</span> {{ admission.status || 'Unknown' }}</p>
+
+              <div v-if="admission.treatment_plan && admission.treatment_plan.length">
+                <h4>Treatment Plan:</h4>
+                <div v-for="(treatment, tIndex) in admission.treatment_plan" :key="tIndex" class="treatment-item">
+                  <p>{{ treatment.procedure || 'Unnamed procedure' }} - {{ treatment.status || 'No status' }}
+                    ({{ formatDateSafe(treatment.scheduled_date) }})</p>
+                </div>
+              </div>
+              <br>
+              <hr>
+            </div>
+          </div>
+          <p v-else class="no-data">No admissions available</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medical History Form Modal -->
+    <div v-if="showMedicalHistoryForm" class="modal">
+      <div class="modal-content">
+        <h2>Add Medical History</h2>
+        <label>Disease:</label>
+        <input type="text" v-model="newMedicalHistory.disease" placeholder="Enter disease/condition" />
+        <label>Diagnosed Date:</label>
+        <input type="date" v-model="newMedicalHistory.diagnosed_date" />
+        <label>Treatment:</label>
+        <textarea v-model="newMedicalHistory.treatment" placeholder="Enter treatment details"></textarea>
+        <div class="modal-buttons">
+          <button @click="addMedicalHistory" class="save-button">Save</button>
+          <button @click="showMedicalHistoryForm = false" class="cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admission Form Modal -->
+    <div v-if="showAdmissionForm" class="modal">
+      <div class="modal-content">
+        <h2>Add Admission</h2>
+        <label>Admission Date:</label>
+        <input type="date" v-model="newAdmission.admission_date" />
+        <label>Expected Discharge Date:</label>
+        <input type="date" v-model="newAdmission.expected_discharge_date" />
+        <label>Doctor ID:</label>
+        <input type="text" v-model="newAdmission.doctor_id" />
+        <label>Department:</label>
+        <input type="text" v-model="newAdmission.department" />
+        <label>Admission Reason:</label>
+        <textarea v-model="newAdmission.admission_reason"></textarea>
+        <label>Ward:</label>
+        <input type="text" v-model="newAdmission.ward" />
+        <label>Bed Number:</label>
+        <input type="text" v-model="newAdmission.bed_number" />
+        <div class="modal-buttons">
+          <button @click="addAdmission" class="save-button">Save</button>
+          <button @click="showAdmissionForm = false" class="cancel-button">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
-
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {
@@ -170,23 +247,74 @@ export default {
       showAppointmentForm: false,
       showPrescriptionForm: false,
       showMedicalHistory: false,
+      showMedicalHistoryForm: false,
+      showAdmissionForm: false,
+      admissions: [],
+      newMedicalHistory: {
+        disease: '',
+        diagnosed_date: '',
+        treatment: ''
+      },
+      newAdmission: {
+        patient_id: this.$route.params.id,
+        admission_date: '',
+        expected_discharge_date: '',
+        actual_discharge_date: null,
+        doctor_id: this.$route.query.from || "",
+        department: "",
+        admission_reason: '',
+        ward: '',
+        bed_number: '',
+        status: 'Admitted',
+        treatment_plan: [],
+        medications: []
+      },
       // newAppointment: { patient_id: this.$route.params.id, doctor_id: "67b3035e4aa1f361628ad2a3", date: '', time: '', status: 'Pending', remarkes: '' },
       newPrescription: {
         date: "",
         medications: [{ name: "", dosage: "", frequency: "", duration: "" }]
       },
-      newAppointment: { 
-      patient_id: this.$route.params.id, 
-      doctor_id: this.$route.query.from || "", // Use doctor_id from route query
-      date: '', 
-      time: '', 
-      status: 'Pending', 
-      remarks: '' // Fixed typo from 'remarkes'
-    }
+      newAppointment: {
+        patient_id: this.$route.params.id,
+        doctor_id: this.$route.query.from || "", // Use doctor_id from route query
+        date: '',
+        time: '',
+        status: 'Pending',
+        remarks: '' // Fixed typo from 'remarkes'
+      }
     };
   },
   methods: {
+    formatDateSafe(dateStr) {
+      if (!dateStr) return 'No date specified';
+
+      // Try parsing the date
+      const date = new Date(dateStr);
+
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        // If the format is YYYY-MM-DD, manually parse it
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          const [year, month, day] = dateStr.split('-').map(Number);
+          // Note: month is 0-based in JavaScript Date
+          return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+        }
+        return 'Invalid date';
+      }
+
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    },
+
     formatDate(date) {
+      if (!date) return 'No date specified';
 
       return new Date(date).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -238,6 +366,22 @@ export default {
         this.medicationHistory = await response.json();
       } catch (error) {
         console.error("Error fetching medication history:", error);
+      }
+    },
+    async fetchAdmissions() {
+      try {
+        console.log("Fetching admissions for patient:", this.$route.params.id);
+        const response = await axios.get("http://127.0.0.1:8000/admissions/");
+        console.log("Raw admissions data:", response.data);
+
+        // Filter admissions for current patient
+        this.admissions = response.data.filter(admission =>
+          admission.patient_id === this.$route.params.id
+        );
+
+        console.log("Filtered admissions:", this.admissions);
+      } catch (error) {
+        console.error("Error fetching admissions:", error);
       }
     },
     async addAppointment() {
@@ -310,44 +454,140 @@ export default {
     toggleMedicalHistory() {
       this.showMedicalHistory = !this.showMedicalHistory;
     },
+    async addMedicalHistory() {
+      try {
+        if (!this.newMedicalHistory.disease || !this.newMedicalHistory.diagnosed_date) {
+          alert("Please fill in all required fields");
+          return;
+        }
+
+        const historyItem = { ...this.newMedicalHistory };
+        const patientId = this.$route.params.id;
+
+        // Using axios to update patient's medical history
+        const response = await axios.put(
+          `http://127.0.0.1:8000/patients/medicalhistory/${patientId}/`,
+          historyItem
+        );
+
+        if (response.status === 200) {
+          // Update local data structure
+          if (!this.patient.medical_history) {
+            this.patient.medical_history = [];
+          }
+          this.patient.medical_history.push(historyItem);
+
+          // Reset form and close modal
+          this.newMedicalHistory = {
+            disease: '',
+            diagnosed_date: '',
+            treatment: ''
+          };
+          this.showMedicalHistoryForm = false;
+
+          // Show success message
+          alert("Medical history added successfully");
+
+          // Refresh patient data
+          await this.fetchPatientData();
+        }
+      } catch (error) {
+        console.error("Error adding medical history:", error);
+        alert("Failed to add medical history");
+      }
+    },
+    async addAdmission() {
+      try {
+        if (!this.newAdmission.admission_date || !this.newAdmission.admission_reason) {
+          alert("Please fill in all required fields");
+          return;
+        }
+
+        // Set patient ID from route
+        this.newAdmission.patient_id = this.$route.params.id;
+
+        // Initialize empty arrays for treatment plan and medications if needed
+        if (!this.newAdmission.treatment_plan) {
+          this.newAdmission.treatment_plan = [];
+        }
+        if (!this.newAdmission.medications) {
+          this.newAdmission.medications = [];
+        }
+
+        // Send the request to create a new admission
+        const response = await axios.post(
+          "http://127.0.0.1:8000/admissions/create",
+          this.newAdmission
+        );
+
+        if (response.status === 201 || response.status === 200) {
+          // Add the new admission to local array
+          this.admissions.push(response.data);
+
+          // Reset form and close modal
+          this.newAdmission = {
+            patient_id: this.$route.params.id,
+            admission_date: '',
+            expected_discharge_date: '',
+            actual_discharge_date: null,
+            doctor_id: '',
+            department: '',
+            admission_reason: '',
+            ward: '',
+            bed_number: '',
+            status: 'Admitted',
+            treatment_plan: [],
+            medications: []
+          };
+          this.showAdmissionForm = false;
+
+          // Show success message
+          alert("Admission added successfully");
+        }
+      } catch (error) {
+        console.error("Error adding admission:", error);
+        alert("Failed to add admission");
+      }
+    },
     async toggleAppointmentStatus(appointment) {
-    try {
-      if (!appointment.id) {
-        throw new Error('Appointment ID is missing');
-      }
+      try {
+        if (!appointment.id) {
+          throw new Error('Appointment ID is missing');
+        }
 
-      const newStatus = appointment.status === 'Pending' ? 'Confirmed' : 'Pending';
-      
-      const response = await fetch(`http://127.0.0.1:8000/appointments/${appointment.id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
+        const newStatus = appointment.status === 'Pending' ? 'Confirmed' : 'Pending';
 
-      if (response.ok) {
-        // Update the local appointment status
-        appointment.status = newStatus;
-        // Show success message
-        alert(`Appointment status updated to ${newStatus}`);
-        // Refresh appointments list
-        await this.fetchAppointments();
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update status');
+        const response = await fetch(`http://127.0.0.1:8000/appointments/${appointment.id}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        if (response.ok) {
+          // Update the local appointment status
+          appointment.status = newStatus;
+          // Show success message
+          alert(`Appointment status updated to ${newStatus}`);
+          // Refresh appointments list
+          await this.fetchAppointments();
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to update status');
+        }
+      } catch (error) {
+        console.error('Error updating appointment status:', error);
+        alert('Failed to update appointment status: ' + error.message);
       }
-    } catch (error) {
-      console.error('Error updating appointment status:', error);
-      alert('Failed to update appointment status: ' + error.message);
     }
-  }
   },
   mounted() {
     this.fetchPatientData();
     this.fetchAppointments();
     this.fetchPrescriptions();
     this.fetchMedicationHistory();
+    this.fetchAdmissions();
   }
 };
 </script>
@@ -356,7 +596,8 @@ export default {
 
 <style scoped>
 /* Page Background */
-.detail-page {
+.detail-page
+{
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
   padding: 2rem;
@@ -365,7 +606,8 @@ export default {
 
 
 /* Container */
-.detail-container {
+.detail-container
+{
   max-width: 1100px;
   margin: 0 auto;
   background: #ffffff;
@@ -376,19 +618,22 @@ export default {
 
 
 /* Header */
-.header-section {
+.header-section
+{
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 }
 
-.header-section h1 {
+.header-section h1
+{
   font-size: 2.5rem;
   color: #1a365d;
 }
 
-.back-button {
+.back-button
+{
   background: #2b6cb0;
   color: #fff;
   border: none;
@@ -398,14 +643,16 @@ export default {
   transition: background 0.3s, transform 0.2s;
 }
 
-.back-button:hover {
+.back-button:hover
+{
   background: #2c5282;
   transform: scale(1.05);
 }
 
 
 /* Grid Layout */
-.info-grid {
+.info-grid
+{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
@@ -413,7 +660,8 @@ export default {
 
 
 /* Resizable Cards */
-.info-card {
+.info-card
+{
   min-height: 250px;
   /* Minimum height */
   max-height: 600px;
@@ -429,11 +677,13 @@ export default {
   /* Allows vertical resizing */
 }
 
-.info-card:hover {
+.info-card:hover
+{
   transform: translateY(-5px);
 }
 
-.info-card h2 {
+.info-card h2
+{
   margin-bottom: 1rem;
 
   font-size: 1.5rem;
@@ -445,7 +695,8 @@ export default {
 /* Scrollable Content Inside Cards */
 .info-content,
 .list,
-.history-list {
+.history-list
+{
   flex-grow: 1;
   /* Ensures it expands within the parent */
   overflow-y: auto;
@@ -455,14 +706,16 @@ export default {
 }
 
 /* Title Row for Cards with Add Button */
-.title-row {
+.title-row
+{
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 /* Add Button */
-.add-button {
+.add-button
+{
   background: #38a169;
   color: #fff;
   border: none;
@@ -472,12 +725,14 @@ export default {
   transition: background 0.3s;
 }
 
-.add-button:hover {
+.add-button:hover
+{
   background: #2f855a;
 }
 
 /* List Items */
-.list-item {
+.list-item
+{
   background: #ffffff;
 
   padding: 1rem;
@@ -487,18 +742,21 @@ export default {
 }
 
 
-.history-item h3 {
+.history-item h3
+{
   color: #2b6cb0;
   margin-bottom: 0.5rem;
 }
 
 
-.list-item p {
+.list-item p
+{
   margin: 0.3rem 0;
 }
 
 /* No Data Message */
-.no-data {
+.no-data
+{
   text-align: center;
   color: #a0aec0;
   font-style: italic;
@@ -506,7 +764,8 @@ export default {
 }
 
 /* Modal Styling */
-.modal {
+.modal
+{
   position: fixed;
   top: 0;
   left: 0;
@@ -519,7 +778,8 @@ export default {
   z-index: 100;
 }
 
-.modal-content {
+.modal-content
+{
   background: #fff;
   border-radius: 12px;
   padding: 2rem;
@@ -530,12 +790,14 @@ export default {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
-.modal-content h2 {
+.modal-content h2
+{
   margin-bottom: 1.5rem;
   color: #2d3748;
 }
 
-.modal-content label {
+.modal-content label
+{
   display: block;
   margin: 0.5rem 0 0.2rem;
   font-weight: bold;
@@ -544,7 +806,8 @@ export default {
 
 .modal-content input,
 .modal-content select,
-.modal-content textarea {
+.modal-content textarea
+{
   width: 100%;
   padding: 0.6rem;
   border: 1px solid #cbd5e0;
@@ -552,13 +815,15 @@ export default {
   margin-bottom: 1rem;
 }
 
-.modal-buttons {
+.modal-buttons
+{
   display: flex;
   justify-content: space-between;
   margin-top: 1rem;
 }
 
-.save-button {
+.save-button
+{
   background: #3182ce;
   color: #fff;
   border: none;
@@ -567,7 +832,8 @@ export default {
   cursor: pointer;
 }
 
-.cancel-button {
+.cancel-button
+{
   background: #e53e3e;
   color: #fff;
   border: none;
@@ -576,30 +842,36 @@ export default {
   cursor: pointer;
 }
 
-.save-button:hover {
+.save-button:hover
+{
   background: #2b6cb0;
 }
 
-.cancel-button:hover {
+.cancel-button:hover
+{
   background: #c53030;
 }
 
-.status-pending {
+.status-pending
+{
   color: orange;
 }
 
-.status-confirmed {
+.status-confirmed
+{
   color: green;
 }
 
-.status-row {
+.status-row
+{
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin: 0.5rem 0;
 }
 
-.status-toggle-button {
+.status-toggle-button
+{
   padding: 0.3rem 0.8rem;
   border-radius: 4px;
   border: none;
@@ -610,7 +882,18 @@ export default {
   transition: background 0.2s;
 }
 
-.status-toggle-button:hover {
+.status-toggle-button:hover
+{
   background: #2d3748;
 }
+
+/* Additional styles for admission items */
+.treatment-item
+{
+  margin-left: 1rem;
+  padding: 0.5rem;
+  border-left: 2px solid #4299e1;
+}
+
+/* Ensure axios is imported */
 </style>
