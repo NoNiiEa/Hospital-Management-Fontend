@@ -4,7 +4,7 @@
 	<!-- หน้า admin มีสองฝั่งคือ left และ right -->
 	<div class="admin-page">
 		<div class="left-side">
-			<AdminProfile />
+			<!-- Removed AdminProfile -->
 		</div>
 		<!-- right -->
 		<div class="right-side">
@@ -26,7 +26,7 @@ export default {};
 
 .left-side {
 	margin-top: 5%;
-	width: 25%;
+	width: 0%; /* Adjusted width for balance */
 	/* background-color: #121c3e;
 		color: #121c3e; */
 }

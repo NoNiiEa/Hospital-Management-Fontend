@@ -108,7 +108,45 @@
         <div v-for="person in filteredMedicalPersonnel" :key="person.id">
           <!-- medical personnel display content -->
         </div>
-        <!-- a -->
+
+        <!-- Recent History right - Staff -->
+        <div class="right">
+          <div class="button-add-delete">
+            <h3 class="head-card">Staff</h3>
+            <!-- icon add staff -->
+            <div class="add-delete-right">
+              <button v-on:click="addStaff" class="add-docter">
+                Add
+              </button>
+              <!-- icon delete staff -->
+              <button v-on:click="deleteStaff" class="delete-docter">
+                Delete
+              </button>
+            </div>
+          </div>
+          <ul>
+            <li v-for="staff in staffMembers" :key="staff.id">
+              <Card :name="staff.name" :id="staff.id" type="staff" @deleted="handleDeleted" />
+            </li>
+          </ul>
+          <!-- New pagination controls for Staff -->
+          <div class="pagination">
+            <button :disabled="currentStaffPage === 1" @click="changeStaffPage(currentStaffPage - 1)" class="pagination-btn">
+              Previous
+            </button>
+            <span class="page-info">
+              Page {{ currentStaffPage }} of {{ totalStaffPages }}
+            </span>
+            <button :disabled="currentStaffPage === totalStaffPages" @click="changeStaffPage(currentStaffPage + 1)" class="pagination-btn">
+              Next
+            </button>
+          </div>
+        </div>
+
+        <!-- Where you display staff -->
+        <div v-for="staff in filteredStaff" :key="staff.id">
+          <!-- staff display content -->
+        </div>
       </div>
     </div>
   </div>
@@ -133,6 +171,16 @@ class MedicalPersonnel {
   }
 }
 
+class Staff {
+  constructor(id, name, role, contact, shift) {
+    this.id = id;
+    this.name = name;
+    this.role = role;
+    this.contact = contact;
+    this.shift = shift;
+  }
+}
+
 const imagesize = "40px";
 export default {
   components: {
@@ -148,9 +196,12 @@ export default {
       allPatients: [],
       // Add this new property to store all medical personnel
       allMedicalPersonnel: [],
+      // Add this new property to store all staff
+      allStaff: [],
       // Keep existing properties
       patients: [],
       medicalPersonnel: [],
+      staffMembers: [],
       input: "",
       imagesize,
       currentPage: 1,
@@ -160,6 +211,10 @@ export default {
       currentDoctorPage: 1,
       totalDoctorPages: 10,
       itemsPerDoctorPage: 10,
+      // Staff pagination
+      currentStaffPage: 1,
+      totalStaffPages: 10,
+      itemsPerStaffPage: 10,
       search_input: ""
     };
   },
@@ -179,6 +234,15 @@ export default {
 
       return this.allMedicalPersonnel.filter(person =>
         person.name.toLowerCase().includes(this.search_input.toLowerCase())
+      );
+    },
+
+    // Add the filteredStaff computed property
+    filteredStaff() {
+      if (!this.search_input || !this.allStaff) return this.allStaff || [];
+
+      return this.allStaff.filter(staff =>
+        staff.name.toLowerCase().includes(this.search_input.toLowerCase())
       );
     }
   },
@@ -265,6 +329,39 @@ export default {
       }
     },
 
+    async fetchStaff() {
+      try {
+        const { data: allStaff } = await axios.get("http://127.0.0.1:8000/staffs/");
+        this.allStaff = allStaff.map(
+          (staff) => new Staff(staff.id, staff.name, staff.role, staff.contact, staff.shift)
+        );
+        this.totalStaffPages = Math.ceil(this.filteredStaff.length / this.itemsPerStaffPage);
+        this.updateCurrentPageStaff();
+      } catch (error) {
+        console.error("Error fetching staff:", error);
+        this.allStaff = [];
+        this.staffMembers = [];
+        this.totalStaffPages = 1;
+      }
+    },
+    updateCurrentPageStaff() {
+      const startIndex = (this.currentStaffPage - 1) * this.itemsPerStaffPage;
+      const endIndex = startIndex + this.itemsPerStaffPage;
+      this.staffMembers = this.filteredStaff.slice(startIndex, endIndex);
+    },
+    async changeStaffPage(newPage) {
+      const maxPages = Math.ceil(this.filteredStaff.length / this.itemsPerStaffPage) || 1;
+      if (newPage >= 1 && newPage <= maxPages) {
+        this.currentStaffPage = newPage;
+        this.updateCurrentPageStaff();
+      }
+    },
+    async addStaff() {
+      this.router.push("/staff/add_staff");
+    },
+    async deleteStaff() {
+      this.router.push("/staff/delete_staff");
+    },
     async addPatients() {
       this.router.push("/patient/add_patient");
     },
@@ -284,6 +381,10 @@ export default {
         // Recalculate totalPatientPages and update current page
         this.totalPatientPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage) || 1;
         this.updateCurrentPagePatients();
+      } else if (type === "staff") {
+        this.allStaff = this.allStaff.filter((staff) => staff.id !== id);
+        this.totalStaffPages = Math.ceil(this.filteredStaff.length / this.itemsPerStaffPage) || 1;
+        this.updateCurrentPageStaff();
       } else {
         // Remove from allMedicalPersonnel array
         this.allMedicalPersonnel = this.allMedicalPersonnel.filter((person) => person.id !== id);
@@ -304,6 +405,11 @@ export default {
       this.currentDoctorPage = 1;
       this.totalDoctorPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage) || 1;
       this.updateCurrentPageMedicalPersonnel();
+
+      // Reset to first page for staff
+      this.currentStaffPage = 1;
+      this.totalStaffPages = Math.ceil(this.filteredStaff.length / this.itemsPerStaffPage) || 1;
+      this.updateCurrentPageStaff();
     }
   },
   mounted() {
@@ -315,6 +421,7 @@ export default {
     }
     this.fetchPatients();
     this.fetchMedicalPersonnel();
+    this.fetchStaff();
   },
 };
 </script>
