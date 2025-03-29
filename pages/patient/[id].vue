@@ -227,7 +227,7 @@
         <label>Expected Discharge Date:</label>
         <input type="date" v-model="newAdmission.expected_discharge_date" />
         <label>Doctor ID:</label>
-        <input type="text" v-model="newAdmission.doctor_id" readonly class="readonly-field" />
+        <input type="text" v-model="newAdmission.doctor_id" />
         <label>Department:</label>
         <input type="text" v-model="newAdmission.department" />
         <label>Admission Reason:</label>
