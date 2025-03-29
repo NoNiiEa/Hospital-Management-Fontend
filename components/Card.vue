@@ -7,6 +7,8 @@
         <div class="name">
           {{ name }}
         </div>
+        <!-- Add slot for details that will be used for staff -->
+        <slot name="details"></slot>
       </div>
       <button @click.stop="confirmDelete" class="delete-button">Delete</button>
     </div>
@@ -52,7 +54,7 @@ export default {
     type: {
       type: String,
       required: true,
-      validator: (value) => ["patient", "doctor"].includes(value),
+      validator: (value) => ["patient", "doctor", "staff"].includes(value),
     },
   },
   data() {
@@ -60,13 +62,28 @@ export default {
       deleteWarningCount: 0,
       showModal: false,
       modalMessage: "",
+      isDeleting: false, // Add flag to track if we're in delete process
     };
   },
   methods: {
     async viewDetails() {
+      // If we're currently in the delete process, don't navigate
+      if (this.isDeleting) {
+        return;
+      }
+
       try {
         const baseUrl = "http://127.0.0.1:8000";
-        const endpoint = this.type === "patient" ? "patients" : "doctors";
+        let endpoint;
+
+        if (this.type === "patient") {
+          endpoint = "patients";
+        } else if (this.type === "doctor") {
+          endpoint = "doctors";
+        } else if (this.type === "staff") {
+          endpoint = "staffs";
+        }
+
         const response = await fetch(`${baseUrl}/${endpoint}/get/${this.id}`, {
           headers: {
             accept: "application/json",
@@ -75,17 +92,29 @@ export default {
 
         if (response.ok) {
           // Route to different pages based on type
-          const route =
-            this.type === "patient"
-              ? `/patient/${this.id}`
-              : `/doctor/${this.id}`;
+          let route;
+          if (this.type === "patient") {
+            route = `/patient/${this.id}`;
+          } else if (this.type === "doctor") {
+            route = `/doctor/${this.id}`;
+          } else if (this.type === "staff") {
+            route = `/staff/${this.id}`;
+          }
           this.$router.push(route);
         }
       } catch (error) {
         console.error("Error fetching details:", error);
       }
     },
-    confirmDelete() {
+    confirmDelete(event) {
+      // Prevent event bubbling to avoid triggering viewDetails
+      if (event) {
+        event.stopPropagation();
+      }
+
+      // Set the deleting flag
+      this.isDeleting = true;
+
       this.deleteWarningCount++;
 
       if (this.deleteWarningCount === 1) {
@@ -94,18 +123,27 @@ export default {
         this.modalMessage = `Final warning: This will permanently delete ${this.type} "${this.name}". Are you sure?`;
       }
       this.showModal = true;
-      // ลบ timeout ออก เพื่อให้ modal แสดงจนกว่าจะกดปุ่ม
     },
 
     cancelDelete() {
       this.deleteWarningCount = 0;
       this.showModal = false;
+      this.isDeleting = false; // Reset the deleting flag
     },
 
     async handleDelete() {
       try {
         const baseUrl = "http://127.0.0.1:8000";
-        const endpoint = this.type === "patient" ? "patients" : "doctors";
+        let endpoint;
+
+        if (this.type === "patient") {
+          endpoint = "patients";
+        } else if (this.type === "doctor") {
+          endpoint = "doctors";
+        } else if (this.type === "staff") {
+          endpoint = "staffs";
+        }
+
         const response = await fetch(
           `${baseUrl}/${endpoint}/delete/${this.id}`,
           {
@@ -118,14 +156,18 @@ export default {
 
         if (response.ok) {
           this.$emit("deleted", { id: this.id, type: this.type });
+
+          // Redirect to admin page for all types (patient, doctor, staff)
+          this.$router.push("/admin");
         } else {
-          console.error("Failed to delete");
+          console.error(`Failed to delete ${this.type}`);
         }
       } catch (error) {
         console.error("Error deleting:", error);
       } finally {
         this.deleteWarningCount = 0;
         this.showModal = false;
+        this.isDeleting = false; // Reset the deleting flag
       }
     },
   },
@@ -145,12 +187,12 @@ export default {
   align-items: center;
   padding: 2%;
   cursor: pointer;
-  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1), 
+  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1),
                 -1px -1px 1px rgba(0, 0, 0, 0.1),
                 1px -1px 1px rgba(0, 0, 0, 0.1),
                 -1px 1px 1px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s ease, 
-              transform 0.3s ease, 
+  transition: background-color 0.3s ease,
+              transform 0.3s ease,
               box-shadow 0.3s ease; /* Smooth transition */
 }
 
@@ -181,15 +223,15 @@ export default {
     font-size: 12px;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s ease, 
-                box-shadow 0.3s ease, 
+    transition: background-color 0.3s ease,
+                box-shadow 0.3s ease,
                 transform 0.3s ease; /* Smooth transition */
 }
 
 /* Hover Effect with Neon Glow */
 .delete-button:hover {
     background-color: #FF3131; /* Lighter red */
-    box-shadow: 0 0 5px rgba(255, 49, 49, 0.6), 
+    box-shadow: 0 0 5px rgba(255, 49, 49, 0.6),
                 0 0 10px rgba(255, 49, 49, 0.4); /* Softer neon effect */
     transform: scale(1.05); /* Slightly enlarge */
 }
@@ -197,7 +239,7 @@ export default {
 /* Click (Active) Effect */
 .delete-button:active {
     transform: scale(0.97); /* Slightly shrink */
-    box-shadow: 0 0 3px rgba(255, 49, 49, 0.4), 
+    box-shadow: 0 0 3px rgba(255, 49, 49, 0.4),
                 0 0 6px rgba(255, 49, 49, 0.3); /* Even softer glow */
 }
 

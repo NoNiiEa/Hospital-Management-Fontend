@@ -18,7 +18,7 @@
               </div>
               <input type="search" id="default-search" v-model="search_input"
                 class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-white-700 dark:border-white-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="Search Name" required />
+                placeholder="Search Name, Role or Shift" required />
             </div>
           </form>
         </div>
@@ -153,9 +153,9 @@
 </template>
 
 <script>
-import Card from "../Card.vue";
-import { useRouter } from "vue-router";
 import axios from "axios";
+import { useRouter } from "vue-router";
+import Card from "../Card.vue";
 
 class Patient {
   constructor(id, name) {
@@ -242,7 +242,9 @@ export default {
       if (!this.search_input || !this.allStaff) return this.allStaff || [];
 
       return this.allStaff.filter(staff =>
-        staff.name.toLowerCase().includes(this.search_input.toLowerCase())
+        staff.name.toLowerCase().includes(this.search_input.toLowerCase()) ||
+        staff.role.toLowerCase().includes(this.search_input.toLowerCase()) ||
+        staff.shift.toLowerCase().includes(this.search_input.toLowerCase())
       );
     }
   },
@@ -392,6 +394,10 @@ export default {
         this.totalDoctorPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage) || 1;
         this.updateCurrentPageMedicalPersonnel();
       }
+    },
+    // Add this new method to navigate to staff details
+    goToStaffDetails(id) {
+      this.router.push(`/staff/${id}`);
     },
   },
   watch: {
@@ -661,6 +667,38 @@ export default {
   flex: 1;
   max-width: 500px;
   margin-left: 200px;
+}
+
+/* Add these new styles for staff details */
+.staff-details {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #4b5563;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Add hover effect to staff cards */
+li:hover .staff-details {
+  background-color: #eef2ff;
+  transition: background-color 0.3s;
 }
 
 </style>
