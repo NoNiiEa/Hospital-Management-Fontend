@@ -221,7 +221,7 @@
         <label>Expected Discharge Date:</label>
         <input type="date" v-model="newAdmission.expected_discharge_date" />
         <label>Doctor ID:</label>
-        <input type="text" v-model="newAdmission.doctor_id" />
+        <input type="text" v-model="newAdmission.doctor_id" readonly class="readonly-field" />
         <label>Department:</label>
         <input type="text" v-model="newAdmission.department" />
         <label>Admission Reason:</label>
@@ -272,7 +272,7 @@
 
 <script setup>
 import axios from 'axios';
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 // Access route and router instances
@@ -302,12 +302,47 @@ const newMedicalHistory = reactive({
   treatment: ''
 });
 
+// Helper function to find the most relevant doctor for a patient
+const findPatientDoctor = () => {
+  // Case 1: doctor_id from route query (came from doctor's page)
+  if (route.query.from) {
+    return route.query.from;
+  }
+
+  // Case 2: Check patient's appointments for most recent doctor
+  if (patient.value && patient.value.appointments && appointments.value.length > 0) {
+    // Sort appointments by date descending
+    const sortedAppointments = [...appointments.value].sort((a, b) =>
+      new Date(b.date) - new Date(a.date)
+    );
+
+    // Use the doctor from the most recent appointment
+    if (sortedAppointments[0] && sortedAppointments[0].doctor_id) {
+      return sortedAppointments[0].doctor_id;
+    }
+  }
+
+  // Case 3: Check prescriptions for a doctor reference
+  if (prescriptions.value && prescriptions.value.length > 0) {
+    const sortedPrescriptions = [...prescriptions.value].sort((a, b) =>
+      new Date(b.date) - new Date(a.date)
+    );
+
+    if (sortedPrescriptions[0] && sortedPrescriptions[0].doctor_id) {
+      return sortedPrescriptions[0].doctor_id;
+    }
+  }
+
+  // Default: return the route query doctor or empty string
+  return route.query.from || '';
+};
+
 const newAdmission = reactive({
   patient_id: route.params.id,
   admission_date: '',
   expected_discharge_date: '',
   actual_discharge_date: null,
-  doctor_id: route.query.from || '',
+  doctor_id: '', // Will be set when the form is opened
   department: '',
   admission_reason: '',
   ward: '',
@@ -315,28 +350,6 @@ const newAdmission = reactive({
   status: 'Admitted',
   treatment_plan: [],
   medications: []
-});
-
-const newPrescription = reactive({
-  date: '',
-  medications: [{ name: '', dosage: '', frequency: '', duration: '' }]
-});
-
-const newAppointment = reactive({
-  patient_id: route.params.id,
-  doctor_id: route.query.from || '',
-  date: '',
-  time: '',
-  status: 'Pending',
-  remarks: ''
-});
-
-const newBilling = reactive({
-  patient_id: '',
-  appointment_id: '',
-  total_amount: 0,
-  status: 'Paid',
-  payment_method: 'Credit Card'
 });
 
 // Methods (converted to regular functions)
@@ -602,7 +615,7 @@ const addAdmission = async () => {
         admission_date: '',
         expected_discharge_date: '',
         actual_discharge_date: null,
-        doctor_id: '',
+        doctor_id: findPatientDoctor(), // Reset with the found doctor ID
         department: '',
         admission_reason: '',
         ward: '',
@@ -741,6 +754,14 @@ onMounted(() => {
   fetchMedicationHistory();
   fetchAdmissions();
   fetchBillings();
+
+  // Watch for showAdmissionForm changes to set the doctor_id when opened
+  watch(showAdmissionForm, (newValue) => {
+    if (newValue === true) {
+      // When form is opened, populate the doctor_id
+      newAdmission.doctor_id = findPatientDoctor();
+    }
+  });
 });
 </script>
 
@@ -1095,6 +1116,13 @@ onMounted(() => {
 .view-button:hover
 {
   background: #3182ce;
+}
+
+.readonly-field {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.8;
+  border: 1px solid #cbd5e0;
 }
 
 /* Ensure axios is imported */
