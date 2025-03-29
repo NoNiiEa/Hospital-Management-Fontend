@@ -70,8 +70,6 @@
       <div v-if="showAppointmentForm" class="modal">
         <div class="modal-content">
           <h2>Add Appointment</h2>
-          <!-- Doctor Name Input -->
-
           <label>Doctor ID:</label>
           <input type="text" v-model="newAppointment.doctor_id" placeholder="{{doctor_id}} || 'Enter doctor ID'" />
           <label>Date:</label>
@@ -114,27 +112,14 @@
       </div>
       <br>
 
-      <!-- <h1>{{ this }}</h1> -->
-
       <!-- Medical History -->
-
       <div class="info-card">
-
         <div class="title-row">
-
           <h2>📜 Medical History</h2>
           <button @click="showMedicalHistoryForm = true" class="add-button">+ Add</button>
-
         </div>
-
-        <!-- {{ patient }} -->
-
         <div class="history-list">
-
-          <!-- <h1>hello</h1> -->
-
           <div v-if="patient.medical_history?.length">
-
             <div v-for="(history, index) in patient.medical_history" :key="index" class="history-item">
               <br>
               <h3>🩺 {{ history.disease }}</h3>
@@ -145,7 +130,6 @@
             </div>
           </div>
           <p v-else class="no-data">No medical history available</p>
-
         </div>
       </div>
 
@@ -286,454 +270,479 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import axios from 'axios';
+import { onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-export default {
-  data() {
-    return {
-      patient: null,
-      doctor_id: this.$route.query.from,
-      // Add fromDoctor to track if we came from doctor's page
-      fromDoctor: null,
+// Access route and router instances
+const route = useRoute();
+const router = useRouter();
 
-      appointments: [],
-      prescriptions: [],
-      medicationHistory: [],
-      showAppointmentForm: false,
-      showPrescriptionForm: false,
-      showMedicalHistory: false,
-      showMedicalHistoryForm: false,
-      showAdmissionForm: false,
-      admissions: [],
-      newMedicalHistory: {
-        disease: '',
-        diagnosed_date: '',
-        treatment: ''
-      },
-      newAdmission: {
-        patient_id: this.$route.params.id,
+// Reactive state
+const patient = ref(null);
+const doctor_id = ref(route.query.from);
+const fromDoctor = ref(null);
+const appointments = ref([]);
+const prescriptions = ref([]);
+const medicationHistory = ref([]);
+const showAppointmentForm = ref(false);
+const showPrescriptionForm = ref(false);
+const showMedicalHistory = ref(false);
+const showMedicalHistoryForm = ref(false);
+const showAdmissionForm = ref(false);
+const admissions = ref([]);
+const billings = ref([]);
+const showBillingForm = ref(false);
+
+// More complex state with reactive()
+const newMedicalHistory = reactive({
+  disease: '',
+  diagnosed_date: '',
+  treatment: ''
+});
+
+const newAdmission = reactive({
+  patient_id: route.params.id,
+  admission_date: '',
+  expected_discharge_date: '',
+  actual_discharge_date: null,
+  doctor_id: route.query.from || '',
+  department: '',
+  admission_reason: '',
+  ward: '',
+  bed_number: '',
+  status: 'Admitted',
+  treatment_plan: [],
+  medications: []
+});
+
+const newPrescription = reactive({
+  date: '',
+  medications: [{ name: '', dosage: '', frequency: '', duration: '' }]
+});
+
+const newAppointment = reactive({
+  patient_id: route.params.id,
+  doctor_id: route.query.from || '',
+  date: '',
+  time: '',
+  status: 'Pending',
+  remarks: ''
+});
+
+const newBilling = reactive({
+  patient_id: '',
+  appointment_id: '',
+  total_amount: 0,
+  status: 'Paid',
+  payment_method: 'Credit Card'
+});
+
+// Methods (converted to regular functions)
+const formatDateSafe = (dateStr) => {
+  if (!dateStr) return 'No date specified';
+
+  // Try parsing the date
+  const date = new Date(dateStr);
+
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    // If the format is YYYY-MM-DD, manually parse it
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      // Note: month is 0-based in JavaScript Date
+      return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+    return 'Invalid date';
+  }
+
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+const formatDate = (date) => {
+  if (!date) return 'No date specified';
+
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+const goBack = () => {
+  // Check if we have fromDoctor in the route query
+  const doctorId = route.query.from;
+
+  if (doctor_id.value) {
+    router.push(`/doctor/${doctor_id.value}`);
+  } else {
+    // Fallback to admin page if no doctor_id
+    router.push('/admin');
+  }
+};
+
+const fetchPatientData = async () => {
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/patients/get/${route.params.id}`);
+    if (response.ok) {
+      patient.value = await response.json();
+    }
+  } catch (error) {
+    console.error("Error fetching patient data:", error);
+  }
+};
+
+const fetchAppointments = async () => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/appointments/");
+    const allAppointments = await response.json();
+    appointments.value = allAppointments.filter(appointment => appointment.patient_id === route.params.id);
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+  }
+};
+
+const fetchPrescriptions = async () => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/prescriptions/");
+    prescriptions.value = await response.json();
+  } catch (error) {
+    console.error("Error fetching prescriptions:", error);
+  }
+};
+
+const fetchMedicationHistory = async () => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/medication-history/");
+    medicationHistory.value = await response.json();
+  } catch (error) {
+    console.error("Error fetching medication history:", error);
+  }
+};
+
+const fetchAdmissions = async () => {
+  try {
+    console.log("Fetching admissions for patient:", route.params.id);
+    const response = await axios.get("http://127.0.0.1:8000/admissions/");
+    console.log("Raw admissions data:", response.data);
+
+    // Filter admissions for current patient
+    admissions.value = response.data.filter(admission =>
+      admission.patient_id === route.params.id
+    );
+
+    console.log("Filtered admissions:", admissions.value);
+  } catch (error) {
+    console.error("Error fetching admissions:", error);
+  }
+};
+
+const addAppointment = async () => {
+  try {
+    const appointmentData = { ...newAppointment, patient_id: route.params.id };
+    console.log("Adding appointment:", appointmentData);
+
+    const response = await fetch("http://127.0.0.1:8000/appointments/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(appointmentData)
+    });
+
+    if (response.ok) {
+      const addedAppointment = await response.json();
+      appointments.value.push(addedAppointment);
+      showAppointmentForm.value = false;
+
+      // Reset form fields
+      newAppointment.date = '';
+      newAppointment.time = '';
+      newAppointment.status = 'Pending';
+      newAppointment.remarks = '';
+
+      alert("Appointment added successfully!");
+    } else {
+      const errorData = await response.json();
+      alert(`Failed to add appointment: ${errorData.message || "Unknown error"}`);
+    }
+  } catch (error) {
+    console.error("Error adding appointment:", error);
+    alert("Error adding appointment");
+  }
+};
+
+const openPrescriptionForm = () => {
+  showPrescriptionForm.value = true;
+  newPrescription.date = '';
+  newPrescription.medications = [{ name: '', dosage: '', frequency: '', duration: '' }];
+};
+
+const addMedication = () => {
+  newPrescription.medications.push({ name: '', dosage: '', frequency: '', duration: '' });
+};
+
+const removeMedication = (index) => {
+  if (newPrescription.medications.length > 1) {
+    newPrescription.medications.splice(index, 1);
+  }
+};
+
+const submitPrescription = async () => {
+  try {
+    const prescriptionData = {
+      patient_id: route.params.id,
+      doctor_id: "67b3035e4aa1f361628ad2a3",
+      date: newPrescription.date,
+      medications: newPrescription.medications
+    };
+
+    console.log("Submitting prescription:", JSON.stringify(prescriptionData, null, 2));
+
+    const response = await fetch("http://127.0.0.1:8000/prescriptions/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(prescriptionData)
+    });
+
+    if (!response.ok) throw new Error("Failed to save prescription");
+
+    const newPrescriptionData = await response.json();
+    prescriptions.value.push(newPrescriptionData);
+    showPrescriptionForm.value = false;
+  } catch (error) {
+    console.error("Error adding prescription:", error);
+  }
+};
+
+const toggleMedicalHistory = () => {
+  showMedicalHistory.value = !showMedicalHistory.value;
+};
+
+const addMedicalHistory = async () => {
+  try {
+    if (!newMedicalHistory.disease || !newMedicalHistory.diagnosed_date) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    const historyItem = { ...newMedicalHistory };
+    const patientId = route.params.id;
+
+    // Using axios to update patient's medical history
+    const response = await axios.put(
+      `http://127.0.0.1:8000/patients/medicalhistory/${patientId}/`,
+      historyItem
+    );
+
+    if (response.status === 200) {
+      // Update local data structure
+      if (!patient.value.medical_history) {
+        patient.value.medical_history = [];
+      }
+      patient.value.medical_history.push(historyItem);
+
+      // Reset form and close modal
+      newMedicalHistory.disease = '';
+      newMedicalHistory.diagnosed_date = '';
+      newMedicalHistory.treatment = '';
+
+      showMedicalHistoryForm.value = false;
+
+      // Show success message
+      alert("Medical history added successfully");
+
+      // Refresh patient data
+      await fetchPatientData();
+    }
+  } catch (error) {
+    console.error("Error adding medical history:", error);
+    alert("Failed to add medical history");
+  }
+};
+
+const addAdmission = async () => {
+  try {
+    if (!newAdmission.admission_date || !newAdmission.admission_reason) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    // Set patient ID from route
+    newAdmission.patient_id = route.params.id;
+
+    // Initialize empty arrays for treatment plan and medications if needed
+    if (!newAdmission.treatment_plan) {
+      newAdmission.treatment_plan = [];
+    }
+    if (!newAdmission.medications) {
+      newAdmission.medications = [];
+    }
+
+    // Send the request to create a new admission
+    const response = await axios.post(
+      "http://127.0.0.1:8000/admissions/create",
+      newAdmission
+    );
+
+    if (response.status === 201 || response.status === 200) {
+      // Add the new admission to local array
+      admissions.value.push(response.data);
+
+      // Reset form and close modal
+      Object.assign(newAdmission, {
+        patient_id: route.params.id,
         admission_date: '',
         expected_discharge_date: '',
         actual_discharge_date: null,
-        doctor_id: this.$route.query.from || "",
-        department: "",
+        doctor_id: '',
+        department: '',
         admission_reason: '',
         ward: '',
         bed_number: '',
         status: 'Admitted',
         treatment_plan: [],
         medications: []
+      });
+
+      showAdmissionForm.value = false;
+
+      // Show success message
+      alert("Admission added successfully");
+    }
+  } catch (error) {
+    console.error("Error adding admission:", error);
+    alert("Failed to add admission");
+  }
+};
+
+const toggleAppointmentStatus = async (appointment) => {
+  try {
+    if (!appointment.id) {
+      throw new Error('Appointment ID is missing');
+    }
+
+    const newStatus = appointment.status === 'Pending' ? 'Confirmed' : 'Pending';
+
+    const response = await fetch(`http://127.0.0.1:8000/appointments/${appointment.id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
       },
-      // newAppointment: { patient_id: this.$route.params.id, doctor_id: "67b3035e4aa1f361628ad2a3", date: '', time: '', status: 'Pending', remarkes: '' },
-      newPrescription: {
-        date: "",
-        medications: [{ name: "", dosage: "", frequency: "", duration: "" }]
-      },
-      newAppointment: {
-        patient_id: this.$route.params.id,
-        doctor_id: this.$route.query.from || "", // Use doctor_id from route query
-        date: '',
-        time: '',
-        status: 'Pending',
-        remarks: '' // Fixed typo from 'remarkes'
-      },
-      showBillingForm: false,
-      billings: [],
-      newBilling: {
+      body: JSON.stringify({ status: newStatus })
+    });
+
+    if (response.ok) {
+      // Update the local appointment status
+      appointment.status = newStatus;
+      // Show success message
+      alert(`Appointment status updated to ${newStatus}`);
+      // Refresh appointments list
+      await fetchAppointments();
+    } else {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update status');
+    }
+  } catch (error) {
+    console.error('Error updating appointment status:', error);
+    alert('Failed to update appointment status: ' + error.message);
+  }
+};
+
+const fetchBillings = async () => {
+  try {
+    console.log("Fetching billings for patient:", route.params.id);
+    const response = await axios.get("http://127.0.0.1:8000/billings/");
+    console.log("Raw billing data:", response.data);
+
+    // Filter billings for current patient
+    billings.value = response.data.filter(billing =>
+      billing.patient_id === route.params.id
+    );
+
+    console.log("Filtered billings:", billings.value);
+  } catch (error) {
+    console.error("Error fetching billings:", error);
+  }
+};
+
+const addBilling = async () => {
+  try {
+    if (!newBilling.total_amount) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    // Set patient ID from route
+    newBilling.patient_id = route.params.id;
+
+    // If appointment ID is empty, set to N/A
+    if (!newBilling.appointment_id.trim()) {
+      newBilling.appointment_id = "N/A";
+    }
+
+    console.log("Adding billing:", newBilling);
+
+    // Send the request to create a new billing
+    const response = await axios.post(
+      "http://127.0.0.1:8000/billings/create",
+      newBilling
+    );
+
+    if (response.status === 201 || response.status === 200) {
+      // Add the new billing to local array
+      billings.value.push(response.data);
+
+      // Reset form and close modal
+      Object.assign(newBilling, {
         patient_id: '',
         appointment_id: '',
         total_amount: 0,
         status: 'Paid',
         payment_method: 'Credit Card'
-      }
-    };
-  },
-  methods: {
-    formatDateSafe(dateStr) {
-      if (!dateStr) return 'No date specified';
-
-      // Try parsing the date
-      const date = new Date(dateStr);
-
-      // Check if the date is valid
-      if (isNaN(date.getTime())) {
-        // If the format is YYYY-MM-DD, manually parse it
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-          const [year, month, day] = dateStr.split('-').map(Number);
-          // Note: month is 0-based in JavaScript Date
-          return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          });
-        }
-        return 'Invalid date';
-      }
-
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
       });
-    },
 
-    formatDate(date) {
-      if (!date) return 'No date specified';
+      showBillingForm.value = false;
 
-      return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    },
-    goBack() {
-      // Check if we have fromDoctor in the route query
-      const doctorId = this.$route.query.from;
-      this.$router.push(`/admin`);
-      if (this.doctor_id) {
-        this.$router.push(`/doctor/${this.doctor_id}`);
-      } else {
-        // Fallback to admin page if no doctor_id
-        this.$router.push('/admin');
-      }
-    },
-    async fetchPatientData() {
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/patients/get/${this.$route.params.id}`);
-        if (response.ok) {
-          this.patient = await response.json();
-        }
-      } catch (error) {
-        console.error("Error fetching patient data:", error);
-      }
-    },
-    async fetchAppointments() {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/appointments/");
-        const allAppointments = await response.json();
-        this.appointments = allAppointments.filter(appointment => appointment.patient_id === this.$route.params.id);
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-      }
-    },
-    async fetchPrescriptions() {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/prescriptions/");
-        this.prescriptions = await response.json();
-      } catch (error) {
-        console.error("Error fetching prescriptions:", error);
-      }
-    },
-    async fetchMedicationHistory() {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/medication-history/");
-        this.medicationHistory = await response.json();
-      } catch (error) {
-        console.error("Error fetching medication history:", error);
-      }
-    },
-    async fetchAdmissions() {
-      try {
-        console.log("Fetching admissions for patient:", this.$route.params.id);
-        const response = await axios.get("http://127.0.0.1:8000/admissions/");
-        console.log("Raw admissions data:", response.data);
-
-        // Filter admissions for current patient
-        this.admissions = response.data.filter(admission =>
-          admission.patient_id === this.$route.params.id
-        );
-
-        console.log("Filtered admissions:", this.admissions);
-      } catch (error) {
-        console.error("Error fetching admissions:", error);
-      }
-    },
-    async addAppointment() {
-      try {
-        const appointmentData = { ...this.newAppointment, patient_id: this.$route.params.id };
-        console.log("Adding appointment:", appointmentData);
-
-        const response = await fetch("http://127.0.0.1:8000/appointments/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(appointmentData)
-        });
-
-        if (response.ok) {
-          const addedAppointment = await response.json();
-          this.appointments.push(addedAppointment);
-          this.showAppointmentForm = false;
-          this.newAppointment = { date: "", time: "", status: "Pending", remarks: "" };
-          alert("Appointment added successfully!");
-        } else {
-          const errorData = await response.json();
-          alert(`Failed to add appointment: ${errorData.message || "Unknown error"}`);
-        }
-      } catch (error) {
-        console.error("Error adding appointment:", error);
-        alert("Error adding appointment");
-      }
-    },
-    openPrescriptionForm() {
-      this.showPrescriptionForm = true;
-      this.newPrescription = {
-        date: "",
-        medications: [{ name: "", dosage: "", frequency: "", duration: "" }]
-      };
-    },
-    addMedication() {
-      this.newPrescription.medications.push({ name: "", dosage: "", frequency: "", duration: "" });
-    },
-    removeMedication(index) {
-      if (this.newPrescription.medications.length > 1) {
-        this.newPrescription.medications.splice(index, 1);
-      }
-    },
-    async submitPrescription() {
-      try {
-        const prescriptionData = {
-          patient_id: this.$route.params.id,
-          doctor_id: "67b3035e4aa1f361628ad2a3",
-          date: this.newPrescription.date,
-          medications: this.newPrescription.medications
-        };
-
-        console.log("Submitting prescription:", JSON.stringify(prescriptionData, null, 2));
-
-        const response = await fetch("http://127.0.0.1:8000/prescriptions/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(prescriptionData)
-        });
-
-        if (!response.ok) throw new Error("Failed to save prescription");
-
-        const newPrescription = await response.json();
-        this.prescriptions.push(newPrescription);
-        this.showPrescriptionForm = false;
-      } catch (error) {
-        console.error("Error adding prescription:", error);
-      }
-    },
-    toggleMedicalHistory() {
-      this.showMedicalHistory = !this.showMedicalHistory;
-    },
-    async addMedicalHistory() {
-      try {
-        if (!this.newMedicalHistory.disease || !this.newMedicalHistory.diagnosed_date) {
-          alert("Please fill in all required fields");
-          return;
-        }
-
-        const historyItem = { ...this.newMedicalHistory };
-        const patientId = this.$route.params.id;
-
-        // Using axios to update patient's medical history
-        const response = await axios.put(
-          `http://127.0.0.1:8000/patients/medicalhistory/${patientId}/`,
-          historyItem
-        );
-
-        if (response.status === 200) {
-          // Update local data structure
-          if (!this.patient.medical_history) {
-            this.patient.medical_history = [];
-          }
-          this.patient.medical_history.push(historyItem);
-
-          // Reset form and close modal
-          this.newMedicalHistory = {
-            disease: '',
-            diagnosed_date: '',
-            treatment: ''
-          };
-          this.showMedicalHistoryForm = false;
-
-          // Show success message
-          alert("Medical history added successfully");
-
-          // Refresh patient data
-          await this.fetchPatientData();
-        }
-      } catch (error) {
-        console.error("Error adding medical history:", error);
-        alert("Failed to add medical history");
-      }
-    },
-    async addAdmission() {
-      try {
-        if (!this.newAdmission.admission_date || !this.newAdmission.admission_reason) {
-          alert("Please fill in all required fields");
-          return;
-        }
-
-        // Set patient ID from route
-        this.newAdmission.patient_id = this.$route.params.id;
-
-        // Initialize empty arrays for treatment plan and medications if needed
-        if (!this.newAdmission.treatment_plan) {
-          this.newAdmission.treatment_plan = [];
-        }
-        if (!this.newAdmission.medications) {
-          this.newAdmission.medications = [];
-        }
-
-        // Send the request to create a new admission
-        const response = await axios.post(
-          "http://127.0.0.1:8000/admissions/create",
-          this.newAdmission
-        );
-
-        if (response.status === 201 || response.status === 200) {
-          // Add the new admission to local array
-          this.admissions.push(response.data);
-
-          // Reset form and close modal
-          this.newAdmission = {
-            patient_id: this.$route.params.id,
-            admission_date: '',
-            expected_discharge_date: '',
-            actual_discharge_date: null,
-            doctor_id: '',
-            department: '',
-            admission_reason: '',
-            ward: '',
-            bed_number: '',
-            status: 'Admitted',
-            treatment_plan: [],
-            medications: []
-          };
-          this.showAdmissionForm = false;
-
-          // Show success message
-          alert("Admission added successfully");
-        }
-      } catch (error) {
-        console.error("Error adding admission:", error);
-        alert("Failed to add admission");
-      }
-    },
-    async toggleAppointmentStatus(appointment) {
-      try {
-        if (!appointment.id) {
-          throw new Error('Appointment ID is missing');
-        }
-
-        const newStatus = appointment.status === 'Pending' ? 'Confirmed' : 'Pending';
-
-        const response = await fetch(`http://127.0.0.1:8000/appointments/${appointment.id}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: newStatus })
-        });
-
-        if (response.ok) {
-          // Update the local appointment status
-          appointment.status = newStatus;
-          // Show success message
-          alert(`Appointment status updated to ${newStatus}`);
-          // Refresh appointments list
-          await this.fetchAppointments();
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to update status');
-        }
-      } catch (error) {
-        console.error('Error updating appointment status:', error);
-        alert('Failed to update appointment status: ' + error.message);
-      }
-    },
-    async fetchBillings() {
-      try {
-        console.log("Fetching billings for patient:", this.$route.params.id);
-        const response = await axios.get("http://127.0.0.1:8000/billings/");
-        console.log("Raw billing data:", response.data);
-
-        // Filter billings for current patient
-        this.billings = response.data.filter(billing =>
-          billing.patient_id === this.$route.params.id
-        );
-
-        console.log("Filtered billings:", this.billings);
-      } catch (error) {
-        console.error("Error fetching billings:", error);
-      }
-    },
-
-    async addBilling() {
-      try {
-        if (!this.newBilling.total_amount) {
-          alert("Please enter a valid amount");
-          return;
-        }
-
-        // Set patient ID from route
-        this.newBilling.patient_id = this.$route.params.id;
-
-        // If appointment ID is empty, set to N/A
-        if (!this.newBilling.appointment_id.trim()) {
-          this.newBilling.appointment_id = "N/A";
-        }
-
-        console.log("Adding billing:", this.newBilling);
-
-        // Send the request to create a new billing
-        const response = await axios.post(
-          "http://127.0.0.1:8000/billings/create",
-          this.newBilling
-        );
-
-        if (response.status === 201 || response.status === 200) {
-          // Add the new billing to local array
-          this.billings.push(response.data);
-
-          // Reset form and close modal
-          this.newBilling = {
-            patient_id: '',
-            appointment_id: '',
-            total_amount: 0,
-            status: 'Paid',
-            payment_method: 'Credit Card'
-          };
-          this.showBillingForm = false;
-
-          // Show success message
-          alert("Billing added successfully");
-        }
-      } catch (error) {
-        console.error("Error adding billing:", error);
-        alert("Failed to add billing: " + (error.response?.data?.detail || "Unknown error"));
-      }
-    },
-
-    getBillingStatusClass(status) {
-      switch (status) {
-        case 'Paid': return 'status-confirmed';
-        case 'Pending': return 'status-pending';
-        case 'Overdue': return 'status-overdue';
-        default: return '';
-      }
-    },
-
-    goToBillingPage() {
-      this.$router.push(`/billing/${this.$route.params.id}`);
+      // Show success message
+      alert("Billing added successfully");
     }
-  },
-  mounted() {
-    this.fetchPatientData();
-    this.fetchAppointments();
-    this.fetchPrescriptions();
-    this.fetchMedicationHistory();
-    this.fetchAdmissions();
-    this.fetchBillings();
+  } catch (error) {
+    console.error("Error adding billing:", error);
+    alert("Failed to add billing: " + (error.response?.data?.detail || "Unknown error"));
   }
 };
+
+const getBillingStatusClass = (status) => {
+  switch (status) {
+    case 'Paid': return 'status-confirmed';
+    case 'Pending': return 'status-pending';
+    case 'Overdue': return 'status-overdue';
+    default: return '';
+  }
+};
+
+const goToBillingPage = () => {
+  router.push(`/billing/${route.params.id}`);
+};
+
+// Lifecycle hooks - mounted equivalent
+onMounted(() => {
+  fetchPatientData();
+  fetchAppointments();
+  fetchPrescriptions();
+  fetchMedicationHistory();
+  fetchAdmissions();
+  fetchBillings();
+});
 </script>
-
-
 
 <style scoped>
 /* Page Background */
