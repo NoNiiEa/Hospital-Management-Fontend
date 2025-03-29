@@ -84,7 +84,9 @@
           <label>Remarks:</label>
           <textarea v-model="newAppointment.remarks"></textarea>
           <div class="modal-buttons">
-            <button @click="addAppointment" class="save-button">Save</button>
+            <button @click="addAppointment" class="save-button" :disabled="appointmentLoading">
+              {{ appointmentLoading ? 'Saving...' : 'Save' }}
+            </button>
             <button @click="showAppointmentForm = false" class="cancel-button">Cancel</button>
           </div>
         </div>
@@ -105,7 +107,9 @@
           </div>
           <button @click="addMedication">+ Add Medication</button>
           <div class="modal-buttons">
-            <button @click="submitPrescription">Save</button>
+            <button @click="submitPrescription" :disabled="prescriptionLoading" class="save-button">
+              {{ prescriptionLoading ? 'Saving...' : 'Save' }}
+            </button>
             <button @click="showPrescriptionForm = false">Cancel</button>
           </div>
         </div>
@@ -206,7 +210,9 @@
         <label>Treatment:</label>
         <textarea v-model="newMedicalHistory.treatment" placeholder="Enter treatment details"></textarea>
         <div class="modal-buttons">
-          <button @click="addMedicalHistory" class="save-button">Save</button>
+          <button @click="addMedicalHistory" class="save-button" :disabled="medicalHistoryLoading">
+            {{ medicalHistoryLoading ? 'Saving...' : 'Save' }}
+          </button>
           <button @click="showMedicalHistoryForm = false" class="cancel-button">Cancel</button>
         </div>
       </div>
@@ -231,7 +237,9 @@
         <label>Bed Number:</label>
         <input type="text" v-model="newAdmission.bed_number" />
         <div class="modal-buttons">
-          <button @click="addAdmission" class="save-button">Save</button>
+          <button @click="addAdmission" class="save-button" :disabled="admissionLoading">
+            {{ admissionLoading ? 'Saving...' : 'Save' }}
+          </button>
           <button @click="showAdmissionForm = false" class="cancel-button">Cancel</button>
         </div>
       </div>
@@ -262,7 +270,9 @@
           <option value="Other">Other</option>
         </select>
         <div class="modal-buttons">
-          <button @click="addBilling" class="save-button">Save</button>
+          <button @click="addBilling" class="save-button" :disabled="billingLoading">
+            {{ billingLoading ? 'Saving...' : 'Save' }}
+          </button>
           <button @click="showBillingForm = false" class="cancel-button">Cancel</button>
         </div>
       </div>
@@ -295,34 +305,30 @@ const admissions = ref([]);
 const billings = ref([]);
 const showBillingForm = ref(false);
 
-// More complex state with reactive()
-const newMedicalHistory = reactive({
-  disease: '',
-  diagnosed_date: '',
-  treatment: ''
-});
+// Loading states for button actions
+const isLoading = ref(false);
+const appointmentLoading = ref(false);
+const prescriptionLoading = ref(false);
+const medicalHistoryLoading = ref(false);
+const admissionLoading = ref(false);
+const billingLoading = ref(false);
 
 // Helper function to find the most relevant doctor for a patient
 const findPatientDoctor = () => {
-  // Case 1: doctor_id from route query (came from doctor's page)
   if (route.query.from) {
     return route.query.from;
   }
 
-  // Case 2: Check patient's appointments for most recent doctor
   if (patient.value && patient.value.appointments && appointments.value.length > 0) {
-    // Sort appointments by date descending
     const sortedAppointments = [...appointments.value].sort((a, b) =>
       new Date(b.date) - new Date(a.date)
     );
 
-    // Use the doctor from the most recent appointment
     if (sortedAppointments[0] && sortedAppointments[0].doctor_id) {
       return sortedAppointments[0].doctor_id;
     }
   }
 
-  // Case 3: Check prescriptions for a doctor reference
   if (prescriptions.value && prescriptions.value.length > 0) {
     const sortedPrescriptions = [...prescriptions.value].sort((a, b) =>
       new Date(b.date) - new Date(a.date)
@@ -333,16 +339,47 @@ const findPatientDoctor = () => {
     }
   }
 
-  // Default: return the route query doctor or empty string
   return route.query.from || '';
 };
 
+// Initialize the newAppointment AFTER findPatientDoctor is defined
+const newAppointment = reactive({
+  doctor_id: route.query.from || '',  // We'll update this with findPatientDoctor when data is loaded
+  date: '',
+  time: '',
+  status: 'Pending',
+  remarks: ''
+});
+
+// Initialize newPrescription
+const newPrescription = reactive({
+  date: '',
+  medications: [{ name: '', dosage: '', frequency: '', duration: '' }]
+});
+
+// Medical history state
+const newMedicalHistory = reactive({
+  disease: '',
+  diagnosed_date: '',
+  treatment: ''
+});
+
+// Initialize newBilling
+const newBilling = reactive({
+  patient_id: route.params.id,
+  appointment_id: '',
+  total_amount: 0,
+  status: 'Paid',
+  payment_method: 'Credit Card'
+});
+
+// Initialize newAdmission
 const newAdmission = reactive({
   patient_id: route.params.id,
   admission_date: '',
   expected_discharge_date: '',
   actual_discharge_date: null,
-  doctor_id: '', // Will be set when the form is opened
+  doctor_id: '',  // Will be updated with findPatientDoctor()
   department: '',
   admission_reason: '',
   ward: '',
@@ -356,15 +393,11 @@ const newAdmission = reactive({
 const formatDateSafe = (dateStr) => {
   if (!dateStr) return 'No date specified';
 
-  // Try parsing the date
   const date = new Date(dateStr);
 
-  // Check if the date is valid
   if (isNaN(date.getTime())) {
-    // If the format is YYYY-MM-DD, manually parse it
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       const [year, month, day] = dateStr.split('-').map(Number);
-      // Note: month is 0-based in JavaScript Date
       return new Date(year, month - 1, day).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -392,13 +425,11 @@ const formatDate = (date) => {
 };
 
 const goBack = () => {
-  // Check if we have fromDoctor in the route query
   const doctorId = route.query.from;
 
   if (doctor_id.value) {
     router.push(`/doctor/${doctor_id.value}`);
   } else {
-    // Fallback to admin page if no doctor_id
     router.push('/admin');
   }
 };
@@ -448,7 +479,6 @@ const fetchAdmissions = async () => {
     const response = await axios.get("http://127.0.0.1:8000/admissions/");
     console.log("Raw admissions data:", response.data);
 
-    // Filter admissions for current patient
     admissions.value = response.data.filter(admission =>
       admission.patient_id === route.params.id
     );
@@ -461,6 +491,15 @@ const fetchAdmissions = async () => {
 
 const addAppointment = async () => {
   try {
+    if (appointmentLoading.value) return;
+    appointmentLoading.value = true;
+
+    if (!newAppointment.date || !newAppointment.time) {
+      alert("Please enter date and time");
+      appointmentLoading.value = false;
+      return;
+    }
+
     const appointmentData = { ...newAppointment, patient_id: route.params.id };
     console.log("Adding appointment:", appointmentData);
 
@@ -475,7 +514,6 @@ const addAppointment = async () => {
       appointments.value.push(addedAppointment);
       showAppointmentForm.value = false;
 
-      // Reset form fields
       newAppointment.date = '';
       newAppointment.time = '';
       newAppointment.status = 'Pending';
@@ -488,7 +526,9 @@ const addAppointment = async () => {
     }
   } catch (error) {
     console.error("Error adding appointment:", error);
-    alert("Error adding appointment");
+    alert("Error adding appointment: " + error.message);
+  } finally {
+    appointmentLoading.value = false;
   }
 };
 
@@ -510,9 +550,24 @@ const removeMedication = (index) => {
 
 const submitPrescription = async () => {
   try {
+    if (prescriptionLoading.value) return;
+    prescriptionLoading.value = true;
+
+    if (!newPrescription.date) {
+      alert("Please select a date");
+      prescriptionLoading.value = false;
+      return;
+    }
+
+    if (!newPrescription.medications[0].name) {
+      alert("Please enter at least one medication");
+      prescriptionLoading.value = false;
+      return;
+    }
+
     const prescriptionData = {
       patient_id: route.params.id,
-      doctor_id: "67b3035e4aa1f361628ad2a3",
+      doctor_id: findPatientDoctor() || "67b3035e4aa1f361628ad2a3", // Use findPatientDoctor() here
       date: newPrescription.date,
       medications: newPrescription.medications
     };
@@ -530,8 +585,12 @@ const submitPrescription = async () => {
     const newPrescriptionData = await response.json();
     prescriptions.value.push(newPrescriptionData);
     showPrescriptionForm.value = false;
+    alert("Prescription added successfully!");
   } catch (error) {
     console.error("Error adding prescription:", error);
+    alert("Error adding prescription: " + error.message);
+  } finally {
+    prescriptionLoading.value = false;
   }
 };
 
@@ -541,57 +600,60 @@ const toggleMedicalHistory = () => {
 
 const addMedicalHistory = async () => {
   try {
+    if (medicalHistoryLoading.value) return;
+    medicalHistoryLoading.value = true;
+
     if (!newMedicalHistory.disease || !newMedicalHistory.diagnosed_date) {
       alert("Please fill in all required fields");
+      medicalHistoryLoading.value = false;
       return;
     }
 
     const historyItem = { ...newMedicalHistory };
     const patientId = route.params.id;
 
-    // Using axios to update patient's medical history
     const response = await axios.put(
       `http://127.0.0.1:8000/patients/medicalhistory/${patientId}/`,
       historyItem
     );
 
     if (response.status === 200) {
-      // Update local data structure
       if (!patient.value.medical_history) {
         patient.value.medical_history = [];
       }
       patient.value.medical_history.push(historyItem);
 
-      // Reset form and close modal
       newMedicalHistory.disease = '';
       newMedicalHistory.diagnosed_date = '';
       newMedicalHistory.treatment = '';
 
       showMedicalHistoryForm.value = false;
 
-      // Show success message
       alert("Medical history added successfully");
 
-      // Refresh patient data
       await fetchPatientData();
     }
   } catch (error) {
     console.error("Error adding medical history:", error);
-    alert("Failed to add medical history");
+    alert("Failed to add medical history: " + error.message);
+  } finally {
+    medicalHistoryLoading.value = false;
   }
 };
 
 const addAdmission = async () => {
   try {
+    if (admissionLoading.value) return;
+    admissionLoading.value = true;
+
     if (!newAdmission.admission_date || !newAdmission.admission_reason) {
       alert("Please fill in all required fields");
+      admissionLoading.value = false;
       return;
     }
 
-    // Set patient ID from route
     newAdmission.patient_id = route.params.id;
 
-    // Initialize empty arrays for treatment plan and medications if needed
     if (!newAdmission.treatment_plan) {
       newAdmission.treatment_plan = [];
     }
@@ -599,23 +661,20 @@ const addAdmission = async () => {
       newAdmission.medications = [];
     }
 
-    // Send the request to create a new admission
     const response = await axios.post(
       "http://127.0.0.1:8000/admissions/create",
       newAdmission
     );
 
     if (response.status === 201 || response.status === 200) {
-      // Add the new admission to local array
       admissions.value.push(response.data);
 
-      // Reset form and close modal
       Object.assign(newAdmission, {
         patient_id: route.params.id,
         admission_date: '',
         expected_discharge_date: '',
         actual_discharge_date: null,
-        doctor_id: findPatientDoctor(), // Reset with the found doctor ID
+        doctor_id: findPatientDoctor(),
         department: '',
         admission_reason: '',
         ward: '',
@@ -627,17 +686,21 @@ const addAdmission = async () => {
 
       showAdmissionForm.value = false;
 
-      // Show success message
       alert("Admission added successfully");
     }
   } catch (error) {
     console.error("Error adding admission:", error);
-    alert("Failed to add admission");
+    alert("Failed to add admission: " + error.message);
+  } finally {
+    admissionLoading.value = false;
   }
 };
 
 const toggleAppointmentStatus = async (appointment) => {
   try {
+    if (isLoading.value) return;
+    isLoading.value = true;
+
     if (!appointment.id) {
       throw new Error('Appointment ID is missing');
     }
@@ -653,11 +716,8 @@ const toggleAppointmentStatus = async (appointment) => {
     });
 
     if (response.ok) {
-      // Update the local appointment status
       appointment.status = newStatus;
-      // Show success message
       alert(`Appointment status updated to ${newStatus}`);
-      // Refresh appointments list
       await fetchAppointments();
     } else {
       const errorData = await response.json();
@@ -666,6 +726,8 @@ const toggleAppointmentStatus = async (appointment) => {
   } catch (error) {
     console.error('Error updating appointment status:', error);
     alert('Failed to update appointment status: ' + error.message);
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -675,7 +737,6 @@ const fetchBillings = async () => {
     const response = await axios.get("http://127.0.0.1:8000/billings/");
     console.log("Raw billing data:", response.data);
 
-    // Filter billings for current patient
     billings.value = response.data.filter(billing =>
       billing.patient_id === route.params.id
     );
@@ -688,32 +749,31 @@ const fetchBillings = async () => {
 
 const addBilling = async () => {
   try {
+    if (billingLoading.value) return;
+    billingLoading.value = true;
+
     if (!newBilling.total_amount) {
       alert("Please enter a valid amount");
+      billingLoading.value = false;
       return;
     }
 
-    // Set patient ID from route
     newBilling.patient_id = route.params.id;
 
-    // If appointment ID is empty, set to N/A
     if (!newBilling.appointment_id.trim()) {
       newBilling.appointment_id = "N/A";
     }
 
     console.log("Adding billing:", newBilling);
 
-    // Send the request to create a new billing
     const response = await axios.post(
       "http://127.0.0.1:8000/billings/create",
       newBilling
     );
 
     if (response.status === 201 || response.status === 200) {
-      // Add the new billing to local array
       billings.value.push(response.data);
 
-      // Reset form and close modal
       Object.assign(newBilling, {
         patient_id: '',
         appointment_id: '',
@@ -724,12 +784,13 @@ const addBilling = async () => {
 
       showBillingForm.value = false;
 
-      // Show success message
       alert("Billing added successfully");
     }
   } catch (error) {
     console.error("Error adding billing:", error);
     alert("Failed to add billing: " + (error.response?.data?.detail || "Unknown error"));
+  } finally {
+    billingLoading.value = false;
   }
 };
 
@@ -746,39 +807,74 @@ const goToBillingPage = () => {
   router.push(`/billing/${route.params.id}`);
 };
 
-// Lifecycle hooks - mounted equivalent
-onMounted(() => {
-  fetchPatientData();
-  fetchAppointments();
-  fetchPrescriptions();
-  fetchMedicationHistory();
-  fetchAdmissions();
-  fetchBillings();
+const updateDoctorIds = () => {
+  const doctor = findPatientDoctor();
+  newAppointment.doctor_id = doctor;
+  newAdmission.doctor_id = doctor;
+};
 
-  // Watch for showAdmissionForm changes to set the doctor_id when opened
+onMounted(async () => {
+  try {
+    await Promise.all([
+      fetchPatientData(),
+      fetchAppointments(),
+      fetchPrescriptions(),
+      fetchMedicationHistory(),
+      fetchAdmissions(),
+      fetchBillings()
+    ]);
+
+    updateDoctorIds();
+  } catch (error) {
+    console.error("Error loading initial data:", error);
+  }
+
   watch(showAdmissionForm, (newValue) => {
     if (newValue === true) {
-      // When form is opened, populate the doctor_id
       newAdmission.doctor_id = findPatientDoctor();
+    }
+  });
+
+  watch(showAppointmentForm, (newValue) => {
+    if (newValue) {
+      newAppointment.doctor_id = findPatientDoctor();
+      newAppointment.date = '';
+      newAppointment.time = '';
+      newAppointment.status = 'Pending';
+      newAppointment.remarks = '';
+    }
+  });
+
+  watch(showPrescriptionForm, (newValue) => {
+    if (newValue) {
+      newPrescription.date = '';
+      newPrescription.medications = [{ name: '', dosage: '', frequency: '', duration: '' }];
+    }
+  });
+
+  watch(showBillingForm, (newValue) => {
+    if (newValue) {
+      Object.assign(newBilling, {
+        patient_id: route.params.id,
+        appointment_id: '',
+        total_amount: 0,
+        status: 'Paid',
+        payment_method: 'Credit Card'
+      });
     }
   });
 });
 </script>
 
 <style scoped>
-/* Page Background */
-.detail-page
-{
+.detail-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
   padding: 2rem;
   font-family: Arial, sans-serif;
 }
 
-
-/* Container */
-.detail-container
-{
+.detail-container {
   max-width: 1100px;
   margin: 0 auto;
   background: #ffffff;
@@ -787,24 +883,19 @@ onMounted(() => {
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-
-/* Header */
-.header-section
-{
+.header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 }
 
-.header-section h1
-{
+.header-section h1 {
   font-size: 2.5rem;
   color: #1a365d;
 }
 
-.back-button
-{
+.back-button {
   background: #2b6cb0;
   color: #fff;
   border: none;
@@ -814,29 +905,20 @@ onMounted(() => {
   transition: background 0.3s, transform 0.2s;
 }
 
-.back-button:hover
-{
+.back-button:hover {
   background: #2c5282;
   transform: scale(1.05);
 }
 
-
-/* Grid Layout */
-.info-grid
-{
+.info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
 }
 
-
-/* Resizable Cards */
-.info-card
-{
+.info-card {
   min-height: 250px;
-  /* Minimum height */
   max-height: 600px;
-  /* Prevents excessive growth */
   overflow: hidden;
   padding: 10px;
   border: 1px solid #ddd;
@@ -845,48 +927,35 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   resize: vertical;
-  /* Allows vertical resizing */
 }
 
-.info-card:hover
-{
+.info-card:hover {
   transform: translateY(-5px);
 }
 
-.info-card h2
-{
+.info-card h2 {
   margin-bottom: 1rem;
-
   font-size: 1.5rem;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.5rem;
   color: #2d3748;
 }
 
-/* Scrollable Content Inside Cards */
 .info-content,
 .list,
-.history-list
-{
+.history-list {
   flex-grow: 1;
-  /* Ensures it expands within the parent */
   overflow-y: auto;
-  /* Enables scrolling */
   padding-right: 10px;
-  /* Prevents text cutoff */
 }
 
-/* Title Row for Cards with Add Button */
-.title-row
-{
+.title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* Add Button */
-.add-button
-{
+.add-button {
   background: #38a169;
   color: #fff;
   border: none;
@@ -896,47 +965,35 @@ onMounted(() => {
   transition: background 0.3s;
 }
 
-.add-button:hover
-{
+.add-button:hover {
   background: #2f855a;
 }
 
-/* List Items */
-.list-item
-{
+.list-item {
   background: #ffffff;
-
   padding: 1rem;
   border-radius: 8px;
   border-left: 4px solid #4299e1;
   margin-bottom: 0.8rem;
 }
 
-
-.history-item h3
-{
+.history-item h3 {
   color: #2b6cb0;
   margin-bottom: 0.5rem;
 }
 
-
-.list-item p
-{
+.list-item p {
   margin: 0.3rem 0;
 }
 
-/* No Data Message */
-.no-data
-{
+.no-data {
   text-align: center;
   color: #a0aec0;
   font-style: italic;
   margin-top: 1rem;
 }
 
-/* Modal Styling */
-.modal
-{
+.modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -949,8 +1006,7 @@ onMounted(() => {
   z-index: 100;
 }
 
-.modal-content
-{
+.modal-content {
   background: #fff;
   border-radius: 12px;
   padding: 2rem;
@@ -961,14 +1017,12 @@ onMounted(() => {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
-.modal-content h2
-{
+.modal-content h2 {
   margin-bottom: 1.5rem;
   color: #2d3748;
 }
 
-.modal-content label
-{
+.modal-content label {
   display: block;
   margin: 0.5rem 0 0.2rem;
   font-weight: bold;
@@ -977,8 +1031,7 @@ onMounted(() => {
 
 .modal-content input,
 .modal-content select,
-.modal-content textarea
-{
+.modal-content textarea {
   width: 100%;
   padding: 0.6rem;
   border: 1px solid #cbd5e0;
@@ -986,15 +1039,13 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-.modal-buttons
-{
+.modal-buttons {
   display: flex;
   justify-content: space-between;
   margin-top: 1rem;
 }
 
-.save-button
-{
+.save-button {
   background: #3182ce;
   color: #fff;
   border: none;
@@ -1003,8 +1054,7 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.cancel-button
-{
+.cancel-button {
   background: #e53e3e;
   color: #fff;
   border: none;
@@ -1013,36 +1063,30 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.save-button:hover
-{
+.save-button:hover {
   background: #2b6cb0;
 }
 
-.cancel-button:hover
-{
+.cancel-button:hover {
   background: #c53030;
 }
 
-.status-pending
-{
+.status-pending {
   color: orange;
 }
 
-.status-confirmed
-{
+.status-confirmed {
   color: green;
 }
 
-.status-row
-{
+.status-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin: 0.5rem 0;
 }
 
-.status-toggle-button
-{
+.status-toggle-button {
   padding: 0.3rem 0.8rem;
   border-radius: 4px;
   border: none;
@@ -1053,22 +1097,17 @@ onMounted(() => {
   transition: background 0.2s;
 }
 
-.status-toggle-button:hover
-{
+.status-toggle-button:hover {
   background: #2d3748;
 }
 
-/* Additional styles for admission items */
-.treatment-item
-{
+.treatment-item {
   margin-left: 1rem;
   padding: 0.5rem;
   border-left: 2px solid #4299e1;
 }
 
-/* Billing specific styles */
-.billing-item
-{
+.billing-item {
   background: #ffffff;
   padding: 1rem;
   border-radius: 8px;
@@ -1076,34 +1115,29 @@ onMounted(() => {
   margin-bottom: 0.8rem;
 }
 
-.billing-header
-{
+.billing-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
 }
 
-.billing-header h3
-{
+.billing-header h3 {
   margin: 0;
   color: #4a5568;
 }
 
-.status-overdue
-{
+.status-overdue {
   color: red;
   font-weight: bold;
 }
 
-.button-group
-{
+.button-group {
   display: flex;
   gap: 0.5rem;
 }
 
-.view-button
-{
+.view-button {
   background: #4299e1;
   color: #fff;
   border: none;
@@ -1113,8 +1147,7 @@ onMounted(() => {
   transition: background 0.3s;
 }
 
-.view-button:hover
-{
+.view-button:hover {
   background: #3182ce;
 }
 
@@ -1125,5 +1158,45 @@ onMounted(() => {
   border: 1px solid #cbd5e0;
 }
 
-/* Ensure axios is imported */
+button {
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.title-row button,
+.modal-buttons button,
+.button-group button,
+.status-toggle-button {
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.add-button, .view-button, .save-button, .cancel-button {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 10;
+  font-weight: bold;
+}
+
+.add-button:hover, .view-button:hover, .save-button:hover, .cancel-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.add-button:active, .view-button:active, .save-button:active, .cancel-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.modal {
+  z-index: 50 !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+.modal-content {
+  z-index: 51 !important;
+  background: white !important;
+}
 </style>
