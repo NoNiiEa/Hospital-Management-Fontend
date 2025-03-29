@@ -1,38 +1,34 @@
-<!-- @format -->
-
-<template lang="html">
+<template>
   <div>
-    <div class="box" @click="viewDetails">
-      <div class="text">
-        <div class="name">
+    <div @click="viewDetails"
+      class="bg-white rounded-xl my-2 flex justify-between items-center p-2 cursor-pointer shadow transition-all duration-300 hover:scale-110 hover:shadow-md active:scale-95 active:shadow-sm">
+      <div class="p-2">
+        <div class="font-bold">
           {{ name }}
         </div>
         <!-- Add slot for details that will be used for staff -->
         <slot name="details"></slot>
       </div>
-      <button @click.stop="confirmDelete" class="delete-button">Delete</button>
+      <button @click.stop="confirmDelete"
+        class="bg-red-600 text-white border-none py-1 px-3 text-center text-xs rounded hover:bg-red-500 hover:shadow-md hover:shadow-red-200 hover:scale-105 active:scale-97 transition-all duration-300">
+        Delete
+      </button>
     </div>
-
     <!-- Modal -->
-    <div v-if="showModal" class="modal">
-      <div class="modal-content">
+    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+      <div class="bg-white p-5 rounded-lg text-center w-80">
         <p>{{ modalMessage }}</p>
-        <div class="modal-buttons">
-          <button @click="cancelDelete" class="modal-button cancel">
+        <div class="mt-4 flex justify-around">
+          <button @click="cancelDelete"
+            class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded text-sm transition-colors duration-200">
             Cancel
           </button>
-          <button
-            v-if="deleteWarningCount === 1"
-            @click="confirmDelete"
-            class="modal-button ok"
-          >
+          <button v-if="deleteWarningCount === 1" @click="confirmDelete"
+            class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-sm transition-colors duration-200">
             OK
           </button>
-          <button
-            v-if="deleteWarningCount === 2"
-            @click="handleDelete"
-            class="modal-button delete"
-          >
+          <button v-if="deleteWarningCount === 2" @click="handleDelete"
+            class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded text-sm transition-colors duration-200">
             Delete
           </button>
         </div>
@@ -40,269 +36,148 @@
     </div>
   </div>
 </template>
-<script>
-export default {
-  props: {
-    name: {
-      type: String,
-      required: true,
-    },
-    id: {
-      type: Number,
-      required: true,
-    },
-    type: {
-      type: String,
-      required: true,
-      validator: (value) => ["patient", "doctor", "staff"].includes(value),
-    },
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useApi } from '~/composables/useApi';
+
+// Type definitions
+type CardType = 'patient' | 'doctor' | 'staff';
+
+interface DeletedEvent {
+  id: number;
+  type: CardType;
+}
+
+// Props
+const props = defineProps({
+  name: {
+    type: String,
+    required: true,
   },
-  data() {
-    return {
-      deleteWarningCount: 0,
-      showModal: false,
-      modalMessage: "",
-      isDeleting: false, // Add flag to track if we're in delete process
-    };
+  id: {
+    type: Number,
+    required: true,
   },
-  methods: {
-    async viewDetails() {
-      // If we're currently in the delete process, don't navigate
-      if (this.isDeleting) {
-        return;
-      }
-
-      try {
-        const baseUrl = "http://127.0.0.1:8000";
-        let endpoint;
-
-        if (this.type === "patient") {
-          endpoint = "patients";
-        } else if (this.type === "doctor") {
-          endpoint = "doctors";
-        } else if (this.type === "staff") {
-          endpoint = "staffs";
-        }
-
-        const response = await fetch(`${baseUrl}/${endpoint}/get/${this.id}`, {
-          headers: {
-            accept: "application/json",
-          },
-        });
-
-        if (response.ok) {
-          // Route to different pages based on type
-          let route;
-          if (this.type === "patient") {
-            route = `/patient/${this.id}`;
-          } else if (this.type === "doctor") {
-            route = `/doctor/${this.id}`;
-          } else if (this.type === "staff") {
-            route = `/staff/${this.id}`;
-          }
-          this.$router.push(route);
-        }
-      } catch (error) {
-        console.error("Error fetching details:", error);
-      }
-    },
-    confirmDelete(event) {
-      // Prevent event bubbling to avoid triggering viewDetails
-      if (event) {
-        event.stopPropagation();
-      }
-
-      // Set the deleting flag
-      this.isDeleting = true;
-
-      this.deleteWarningCount++;
-
-      if (this.deleteWarningCount === 1) {
-        this.modalMessage = `Warning: Are you sure you want to delete ${this.type} "${this.name}"? Click OK to confirm.`;
-      } else if (this.deleteWarningCount === 2) {
-        this.modalMessage = `Final warning: This will permanently delete ${this.type} "${this.name}". Are you sure?`;
-      }
-      this.showModal = true;
-    },
-
-    cancelDelete() {
-      this.deleteWarningCount = 0;
-      this.showModal = false;
-      this.isDeleting = false; // Reset the deleting flag
-    },
-
-    async handleDelete() {
-      try {
-        const baseUrl = "http://127.0.0.1:8000";
-        let endpoint;
-
-        if (this.type === "patient") {
-          endpoint = "patients";
-        } else if (this.type === "doctor") {
-          endpoint = "doctors";
-        } else if (this.type === "staff") {
-          endpoint = "staffs";
-        }
-
-        const response = await fetch(
-          `${baseUrl}/${endpoint}/delete/${this.id}`,
-          {
-            method: "DELETE",
-            headers: {
-              accept: "application/json",
-            },
-          }
-        );
-
-        if (response.ok) {
-          this.$emit("deleted", { id: this.id, type: this.type });
-
-          // Redirect to admin page for all types (patient, doctor, staff)
-          this.$router.push("/admin");
-        } else {
-          console.error(`Failed to delete ${this.type}`);
-        }
-      } catch (error) {
-        console.error("Error deleting:", error);
-      } finally {
-        this.deleteWarningCount = 0;
-        this.showModal = false;
-        this.isDeleting = false; // Reset the deleting flag
-      }
-    },
+  type: {
+    type: String as () => CardType,
+    required: true,
+    validator: (value: string): boolean => ["patient", "doctor", "staff"].includes(value),
   },
+});
+
+// Emits
+const emit = defineEmits<{
+  (e: 'deleted', payload: DeletedEvent): void
+}>();
+
+// Router
+const router = useRouter();
+
+// API service with caching
+const api = useApi();
+
+// State
+const deleteWarningCount = ref<number>(0);
+const showModal = ref<boolean>(false);
+const modalMessage = ref<string>("");
+const isDeleting = ref<boolean>(false);
+
+// Methods
+const viewDetails = async (): Promise<void> => {
+  // If we're currently in the delete process, don't navigate
+  if (isDeleting.value) {
+    return;
+  }
+
+  try {
+    let endpoint: string;
+    if (props.type === "patient") {
+      endpoint = "patients";
+    } else if (props.type === "doctor") {
+      endpoint = "doctors";
+    } else if (props.type === "staff") {
+      endpoint = "staffs";
+    } else {
+      // This should never happen due to the validator, but TS requires us to handle all cases
+      console.error("Invalid type:", props.type);
+      return;
+    }
+
+    // Using API composable with caching
+    await api.get(`/${endpoint}/get/${props.id}`);
+
+    // Route to different pages based on type
+    let route: string;
+    if (props.type === "patient") {
+      route = `/patient/${props.id}`;
+    } else if (props.type === "doctor") {
+      route = `/doctor/${props.id}`;
+    } else if (props.type === "staff") {
+      route = `/staff/${props.id}`;
+    } else {
+      return;
+    }
+    router.push(route);
+  } catch (error) {
+    console.error("Error fetching details:", error);
+  }
+};
+
+const confirmDelete = (event?: Event): void => {
+  // Prevent event bubbling to avoid triggering viewDetails
+  if (event) {
+    event.stopPropagation();
+  }
+  // Set the deleting flag
+  isDeleting.value = true;
+  deleteWarningCount.value++;
+  if (deleteWarningCount.value === 1) {
+    modalMessage.value = `Warning: Are you sure you want to delete ${props.type} "${props.name}"? Click OK to confirm.`;
+  } else if (deleteWarningCount.value === 2) {
+    modalMessage.value = `Final warning: This will permanently delete ${props.type} "${props.name}". Are you sure?`;
+  }
+  showModal.value = true;
+};
+
+const cancelDelete = (): void => {
+  deleteWarningCount.value = 0;
+  showModal.value = false;
+  isDeleting.value = false; // Reset the deleting flag
+};
+
+const handleDelete = async (): Promise<void> => {
+  try {
+    let endpoint: string;
+    if (props.type === "patient") {
+      endpoint = "patients";
+    } else if (props.type === "doctor") {
+      endpoint = "doctors";
+    } else if (props.type === "staff") {
+      endpoint = "staffs";
+    } else {
+      console.error("Invalid type:", props.type);
+      return;
+    }
+
+    // Using API composable
+    await api.del(`/${endpoint}/delete/${props.id}`);
+
+    // Emit the deleted event to update parent components
+    emit("deleted", { id: props.id, type: props.type });
+
+    // Clear any cached data related to this item
+    api.clearCache(`/${endpoint}`);
+
+    // Redirect to admin page for all types (patient, doctor, staff)
+    router.push("/admin");
+  } catch (error) {
+    console.error("Error deleting:", error);
+  } finally {
+    deleteWarningCount.value = 0;
+    showModal.value = false;
+    isDeleting.value = false; // Reset the deleting flag
+  }
 };
 </script>
-<style lang="css">
-.name {
-  font-weight: bold;
-}
-
-.box {
-  background-color: #ffffff;
-  border-radius: 15px;
-  margin: 2% 0%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2%;
-  cursor: pointer;
-  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1),
-                -1px -1px 1px rgba(0, 0, 0, 0.1),
-                1px -1px 1px rgba(0, 0, 0, 0.1),
-                -1px 1px 1px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s ease,
-              transform 0.3s ease,
-              box-shadow 0.3s ease; /* Smooth transition */
-}
-
-.box:hover {
-    background-color: #ffffff;
-    transform: scale(1.1); /* Slightly increase size */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-}
-
-.box:active {
-    transform: scale(0.95); /* Slightly shrink */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-
-.text {
-  padding: 2%;
-}
-
-.delete-button {
-    background-color: #D70040; /* Red background */
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease,
-                box-shadow 0.3s ease,
-                transform 0.3s ease; /* Smooth transition */
-}
-
-/* Hover Effect with Neon Glow */
-.delete-button:hover {
-    background-color: #FF3131; /* Lighter red */
-    box-shadow: 0 0 5px rgba(255, 49, 49, 0.6),
-                0 0 10px rgba(255, 49, 49, 0.4); /* Softer neon effect */
-    transform: scale(1.05); /* Slightly enlarge */
-}
-
-/* Click (Active) Effect */
-.delete-button:active {
-    transform: scale(0.97); /* Slightly shrink */
-    box-shadow: 0 0 3px rgba(255, 49, 49, 0.4),
-                0 0 6px rgba(255, 49, 49, 0.3); /* Even softer glow */
-}
-
-
-.modal {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 5px;
-  text-align: center;
-  width: 300px;
-}
-
-.modal-buttons {
-  margin-top: 10px;
-  display: flex;
-  justify-content: space-around;
-}
-
-.modal-button {
-  border: none;
-  color: white;
-  padding: 8px 16px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 12px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.modal-button.cancel {
-  background-color: #a9a9a9;
-}
-
-.modal-button.cancel:hover {
-  background-color: #808080;
-}
-
-.modal-button.ok {
-  background-color: #4caf50;
-}
-
-.modal-button.ok:hover {
-  background-color: #367c39;
-}
-
-.modal-button.delete {
-  background-color: #f44336;
-}
-
-.modal-button.delete:hover {
-  background-color: #da190b;
-}
-</style>

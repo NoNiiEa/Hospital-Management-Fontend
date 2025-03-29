@@ -32,98 +32,120 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import axios from 'axios';
+import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import Card from "~/components/Card.vue";
 
-export default {
-  components: {
-    Card,
-  },
-  data() {
-    return {
-      doctor: null,
-      error: null,
-      patientsWithDetails: [],
-    };
-  },
-  async mounted() {
-    await this.fetchDoctorData();
-    if (this.doctor?.patients) {
-      await this.fetchPatientsDetails();
-    }
-  },
-  methods: {
-    async fetchDoctorData() {
+// Define interfaces
+interface Contact {
+  phone: string;
+  email: string;
+  address: string;
+}
+
+interface PatientItem {
+  patient_id: string;
+  diagnosis: string;
+  last_visit?: string;
+  name?: string;
+}
+
+interface Doctor {
+  id: string;
+  name: string;
+  specialization: string;
+  contact: Contact;
+  patients: PatientItem[];
+}
+
+interface PatientData {
+  id: string;
+  name: string;
+  // Other properties can be added as needed
+}
+
+const route = useRoute();
+const router = useRouter();
+const doctor = ref<Doctor | null>(null);
+const error = ref<string | null>(null);
+const patientsWithDetails = ref<PatientItem[]>([]);
+
+const fetchDoctorData = async (): Promise<void> => {
+  try {
+    const response = await axios.get<Doctor>(
+      `http://127.0.0.1:8000/doctors/get/${route.params.id}`,
+      {
+        headers: {
+          accept: "application/json",
+        },
+      }
+    );
+    doctor.value = response.data;
+  } catch (err: any) {
+    error.value = `Error fetching doctor: ${err.message}`;
+    console.error("Error:", err);
+  }
+};
+
+const fetchPatientsDetails = async (): Promise<void> => {
+  if (!doctor.value?.patients) return;
+
+  const patientsWithDetailsArray = await Promise.all(
+    doctor.value.patients.map(async (patient) => {
       try {
-        const response = await fetch(
-          `http://127.0.0.1:8000/doctors/get/${this.$route.params.id}`,
+        const response = await axios.get<PatientData>(
+          `http://127.0.0.1:8000/patients/get/${patient.patient_id}`,
           {
             headers: {
               accept: "application/json",
             },
           }
         );
+        return {
+          ...patient,
+          name: response.data.name,
+        };
+      } catch (err) {
+        console.error(
+          `Error fetching patient ${patient.patient_id}:`,
+          err
+        );
+        return patient;
+      }
+    })
+  );
 
-        if (response.ok) {
-          this.doctor = await response.json();
-        } else {
-          this.error = `Failed to fetch doctor details (Status: ${response.status})`;
-          console.error(this.error);
-        }
-      } catch (error) {
-        this.error = `Error fetching doctor: ${error.message}`;
-        console.error("Error:", error);
-      }
-    },
-    async fetchPatientsDetails() {
-      this.patientsWithDetails = await Promise.all(
-        this.doctor.patients.map(async (patient) => {
-          try {
-            const response = await fetch(
-              `http://127.0.0.1:8000/patients/get/${patient.patient_id}`,
-              {
-                headers: {
-                  accept: "application/json",
-                },
-              }
-            );
-            if (response.ok) {
-              const patientData = await response.json();
-              return {
-                ...patient,
-                name: patientData.name,
-              };
-            }
-            return patient;
-          } catch (error) {
-            console.error(
-              `Error fetching patient ${patient.patient_id}:`,
-              error
-            );
-            return patient;
-          }
-        })
-      );
-    },
-    goBack() {
-      this.$router.push("/admin");
-    },
-    formatDate(dateString) {
-      if (!dateString) return "N/A";
-      return new Date(dateString).toLocaleDateString();
-    },
-    handlePatientDeleted({ id }) {
-      if (this.doctor && this.doctor.patients) {
-        this.doctor.patients = this.doctor.patients.filter(
-          (patient) => patient.patient_id !== id
-        );
-        this.patientsWithDetails = this.patientsWithDetails.filter(
-          (patient) => patient.patient_id !== id
-        );
-      }
-    },
-  },
+  patientsWithDetails.value = patientsWithDetailsArray;
 };
+
+const goBack = (): void => {
+  router.push("/admin");
+};
+
+const formatDate = (dateString: string): string => {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString();
+};
+
+const handlePatientDeleted = ({ id }: { id: string }): void => {
+  if (doctor.value && doctor.value.patients) {
+    doctor.value.patients = doctor.value.patients.filter(
+      (patient) => patient.patient_id !== id
+    );
+    patientsWithDetails.value = patientsWithDetails.value.filter(
+      (patient) => patient.patient_id !== id
+    );
+  }
+};
+
+onMounted(async () => {
+  await fetchDoctorData();
+  if (doctor.value?.patients) {
+    await fetchPatientsDetails();
+  }
+});
 </script>
 
 <style scoped>

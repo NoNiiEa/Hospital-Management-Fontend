@@ -11,9 +11,9 @@
         👨‍⚕️
       </div>
 
-      <div v-if="doctor_REF" class="ml-4">
-        <h2 class="text-xl font-semibold">คุณหมอ {{ doctor_REF.name }}</h2>
-        <p class="text-sm opacity-75">ผู้เชี่ยวชาญด้าน {{ doctor_REF.specialization }}</p>
+      <div v-if="doctor" class="ml-4">
+        <h2 class="text-xl font-semibold">คุณหมอ {{ doctor.name }}</h2>
+        <p class="text-sm opacity-75">ผู้เชี่ยวชาญด้าน {{ doctor.specialization }}</p>
       </div>
       <div v-else class="ml-4 text-sm opacity-75">กำลังโหลดข้อมูลแพทย์...</div>
     </div>
@@ -29,7 +29,7 @@
       <div class="bg-white p-6 rounded-lg shadow-md">
         <h2 class="text-lg font-semibold text-gray-700">ตารางงาน</h2>
         <ul class="mt-3">
-          <li v-for="(scheduleItem, index) in doctor_REF?.schedule || []" :key="index" class="p-2 border-b">
+          <li v-for="(scheduleItem, index) in doctor?.schedule || []" :key="index" class="p-2 border-b">
             <strong>{{ scheduleItem.day }}</strong>:
             <span v-for="(time, tIndex) in scheduleItem.timeslot" :key="tIndex">
               {{ time }}<span v-if="tIndex !== scheduleItem.timeslot.length - 1">, </span>
@@ -38,12 +38,10 @@
         </ul>
       </div>
 
-
       <div class="bg-white p-6 rounded-lg shadow-md">
         <h2 class="text-lg font-semibold text-gray-700">เคสล่าสุด</h2>
         <ul class="mt-3">
-          <li v-for="(patientItem, index) in doctor_REF?.patients || []" :key="index" class="p-2 border-b">
-            <!-- <strong>{{ patientNames[patientItem.patient_id] || "กำลังโหลด..." }}</strong> -->
+          <li v-for="(patientItem, index) in doctor?.patients || []" :key="index" class="p-2 border-b">
             <router-link :to="`/patient/${patientItem.patient_id}`" class="text-blue-900 hover:underline">
               <strong>{{ patientNames[patientItem.patient_id] || "กำลังโหลด..." }}</strong>
             </router-link>
@@ -55,63 +53,79 @@
           </li>
         </ul>
       </div>
-
-
-
     </div>
   </div>
-
 </template>
 
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
+import { useApi } from "~/composables/useApi";
 
-<script setup>
-import { ref, onMounted } from "vue";
+// Type definitions
+interface Schedule {
+  day: string;
+  timeslot: string[];
+}
 
-const doctors = ref([]);
-const doctor_REF = ref(null);
-const searchQuery = ref("");
-const patient = ref(null);
-const patientNames = ref({}); // Store fetched patient names
+interface Patient {
+  patient_id: string;
+  diagnosis: string;
+  last_visit: string;
+}
 
-const fetchDoctorById = async () => {
+interface Doctor {
+  id: string;
+  name: string;
+  specialization: string;
+  schedule: Schedule[];
+  patients: Patient[];
+}
+
+// State
+const doctors = ref<Doctor[]>([]);
+const doctor = ref<Doctor | null>(null);
+const searchQuery = ref<string>("");
+const patientNames = ref<Record<string, string>>({});
+
+// API service
+const api = useApi();
+
+// Methods
+const fetchDoctorById = async (): Promise<void> => {
   try {
     const id = "67b304ad4aa1f361628ad2ad";
-    const response = await fetch(`http://127.0.0.1:8000/doctors/get/${id}`);
-    doctor_REF.value = await response.json();
+    const data = await api.get<Doctor>(`/doctors/get/${id}`);
+    doctor.value = data;
   } catch (error) {
     console.error("Error fetching doctor by ID:", error);
   }
 };
 
-const fetchDoctors = async () => {
+const fetchDoctors = async (): Promise<void> => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/doctors/");
-    doctors.value = await response.json();
+    const data = await api.get<Doctor[]>("/doctors/");
+    doctors.value = data;
   } catch (error) {
     console.error("Error fetching doctors:", error);
   }
 };
 
 // Fetch patient details dynamically
-const fetchPatientData = async (patientId) => {
+const fetchPatientData = async (patientId: string): Promise<void> => {
   try {
-    const response = await fetch(`http://127.0.0.1:8000/patients/get/${patientId}`);
-    if (response.ok) {
-      const data = await response.json();
-      patientNames.value[patientId] = data.name; // Store patient's name
-    } else {
-      patientNames.value[patientId] = "ไม่ทราบชื่อ"; // Handle error cases
-    }
+    const data = await api.get<{ name: string }>(`/patients/get/${patientId}`);
+    patientNames.value[patientId] = data.name;
   } catch (error) {
     console.error(`Error fetching patient ${patientId}:`, error);
     patientNames.value[patientId] = "ไม่ทราบชื่อ";
   }
 };
 
-// Fetch all patient names when doctor_REF is loaded
-const fetchAllPatientNames = async () => {
-  if (!doctor_REF.value?.patients) return;
-  for (const patient of doctor_REF.value.patients) {
+// Fetch all patient names when doctor is loaded
+const fetchAllPatientNames = async (): Promise<void> => {
+  if (!doctor.value?.patients) return;
+
+  for (const patient of doctor.value.patients) {
     await fetchPatientData(patient.patient_id);
   }
 };
@@ -120,10 +134,9 @@ const fetchAllPatientNames = async () => {
 onMounted(async () => {
   await fetchDoctors();
   await fetchDoctorById();
-  await fetchAllPatientNames(); // Fetch all patient names
+  await fetchAllPatientNames();
 });
 </script>
-
 
 <style>
 body

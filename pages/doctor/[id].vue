@@ -82,17 +82,48 @@
     </div>
 </template>
 
-
-<script setup>
+<script setup lang="ts">
+import axios from 'axios';
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from 'vue-router';
 
+// Define interfaces
+interface Schedule {
+    day: string;
+    timeslot: string[];
+}
+
+interface PatientItem {
+    patient_id: string;
+    diagnosis: string;
+    last_visit: string;
+}
+
+interface Doctor {
+    id: string;
+    name: string;
+    specialization: string;
+    schedule: Schedule[];
+    patients: PatientItem[];
+    contact: {
+        phone: string;
+        email: string;
+        address: string;
+    };
+}
+
+interface Patient {
+    id: string;
+    name: string;
+    // Add other properties as needed
+}
+
 const route = useRoute();
-const doctors = ref([]);
-const doctor_REF = ref(null);
+const doctors = ref<Doctor[]>([]);
+const doctor_REF = ref<Doctor | null>(null);
 const searchQuery = ref("");
-const patient = ref(null);
-const patientNames = ref({});
+const patient = ref<Patient | null>(null);
+const patientNames = ref<Record<string, string>>({});
 const search = ref("");
 
 // Add computed property for filtered patients
@@ -109,41 +140,37 @@ const filteredPatients = computed(() => {
     });
 });
 
-const fetchDoctorById = async () => {
+const fetchDoctorById = async (): Promise<void> => {
     try {
-        const response = await fetch(`http://127.0.0.1:8000/doctors/get/${route.params.id}`);
-        doctor_REF.value = await response.json();
+        const response = await axios.get<Doctor>(`http://127.0.0.1:8000/doctors/get/${route.params.id}`);
+        doctor_REF.value = response.data;
     } catch (error) {
         console.error("Error fetching doctor by ID:", error);
     }
 };
 
-const fetchDoctors = async () => {
+const fetchDoctors = async (): Promise<void> => {
     try {
-        const response = await fetch("http://127.0.0.1:8000/doctors/");
-        doctors.value = await response.json();
+        const response = await axios.get<Doctor[]>("http://127.0.0.1:8000/doctors/");
+        doctors.value = response.data;
     } catch (error) {
         console.error("Error fetching doctors:", error);
     }
 };
 
-const fetchPatientData = async (patientId) => {
+const fetchPatientData = async (patientId: string): Promise<void> => {
     try {
-        const response = await fetch(`http://127.0.0.1:8000/patients/get/${patientId}`);
-        if (response.ok) {
-            const data = await response.json();
-            patientNames.value[patientId] = data.name;
-        } else {
-            patientNames.value[patientId] = "ไม่ทราบชื่อ";
-        }
+        const response = await axios.get<Patient>(`http://127.0.0.1:8000/patients/get/${patientId}`);
+        patientNames.value[patientId] = response.data.name;
     } catch (error) {
         console.error(`Error fetching patient ${patientId}:`, error);
         patientNames.value[patientId] = "ไม่ทราบชื่อ";
     }
 };
 
-const fetchAllPatientNames = async () => {
+const fetchAllPatientNames = async (): Promise<void> => {
     if (!doctor_REF.value?.patients) return;
+
     for (const patient of doctor_REF.value.patients) {
         await fetchPatientData(patient.patient_id);
     }
@@ -155,7 +182,6 @@ onMounted(async () => {
     await fetchAllPatientNames();
 });
 </script>
-
 
 <style>
 body {

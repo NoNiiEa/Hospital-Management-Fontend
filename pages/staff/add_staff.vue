@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import axios from 'axios';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -89,35 +90,30 @@ const submitForm = async () => {
         shift: inputShift.value
       };
 
-      // Send data to API
-      const response = await fetch('http://127.0.0.1:8000/staffs/create', {
-        method: 'POST',
+      // Send data to API using axios instead of fetch
+      const response = await axios.post('http://127.0.0.1:8000/staffs/create', staffData, {
         headers: {
           'accept': 'application/json',
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(staffData)
+        }
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Staff created with ID:', result.id);
+      console.log('Staff created with ID:', response.data.id);
 
-        // Show success message
-        showSuccessNotification();
+      // Show success notification
+      showSuccessNotification();
 
-        // Add flag for refreshing data if needed
-        sessionStorage.setItem('needsRefresh', 'true');
+      // Add flag for refreshing data if needed
+      sessionStorage.setItem('needsRefresh', 'true');
 
-        // Navigate back to staff list page
-        router.push('/staff');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create staff member');
-      }
-    } catch (error) {
+      // Navigate back to staff list page
+      router.push('/staff');
+    } catch (error: any) {
       console.error('Error submitting form:', error);
-      alert(error.message || 'Failed to add staff member. Please try again.');
+
+      // Handle error from axios response
+      const errorMessage = error.response?.data?.detail || 'Failed to add staff member. Please try again.';
+      alert(errorMessage);
     } finally {
       isSubmitting.value = false;
     }

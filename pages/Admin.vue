@@ -1,38 +1,20 @@
 <!-- @format -->
 
 <template>
-	<!-- หน้า admin มีสองฝั่งคือ left และ right -->
-	<div class="admin-page">
-		<div class="left-side">
-			<!-- Removed AdminProfile -->
-		</div>
-		<!-- right -->
-		<div class="right-side">
-			<AdminDashBoard />
-		</div>
-	</div>
+  <!-- Admin page with dashboard -->
+  <div class="flex w-full h-full">
+    <div class="mt-5 w-0">
+      <!-- Left side space (formerly for AdminProfile) -->
+    </div>
+    <div class="flex-1 bg-blue-50">
+      <AdminDashBoard />
+    </div>
+  </div>
 </template>
 
-<script>
-export default {};
+<script setup lang="ts">
+import AdminDashBoard from '../components/Admin/AdminDashBoard.vue';
 </script>
 
 <style>
-.admin-page {
-	display: flex;
-	width: 100%;
-	height: 100%;
-}
-
-.left-side {
-	margin-top: 5%;
-	width: 0%; /* Adjusted width for balance */
-	/* background-color: #121c3e;
-		color: #121c3e; */
-}
-
-.right-side {
-	flex: 1;
-	background-color: #f0f4f8;
-}
 </style>

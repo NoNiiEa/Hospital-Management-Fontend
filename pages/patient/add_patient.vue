@@ -73,118 +73,137 @@
   </div>
 </template>
 
-<script>
-import { ref } from 'vue';
+<script setup lang="ts">
+import axios from 'axios';
+import { reactive } from 'vue';
 import { useRouter } from 'vue-router';
 
-export default {
-  setup() {
-    const router = useRouter();
-    return { router };
+// Type definitions
+interface Contact {
+  phone: string;
+  email: string;
+  address: string;
+}
+
+interface MedicalHistory {
+  disease: string;
+  diagnosed_date: string;
+  treatment: string;
+}
+
+interface Patient {
+  name: string;
+  age: number;
+  gender: string;
+  contact: Contact;
+  medical_history: MedicalHistory[];
+  appointments: any[];
+  prescriptions: any[];
+}
+
+const router = useRouter();
+
+// Initialize patient data using reactive
+const patient = reactive<Patient>({
+  name: '',
+  age: 0,
+  gender: '',
+  contact: {
+    phone: '',
+    email: '',
+    address: ''
   },
-  data() {
-    return {
-      patient: {
-        name: '',
-        age: 0,
-        gender: '',
-        contact: {
-          phone: '',
-          email: '',
-          address: ''
-        },
-        medical_history: [],
-        appointments: [],
-        prescriptions: []
-      }
-    };
-  },
-  methods: {
-    addMedicalHistory() {
-      this.patient.medical_history.push({
-        disease: '',
-        diagnosed_date: '',
-        treatment: ''
-      });
-    },
-    removeMedicalHistory(index) {
-      this.patient.medical_history.splice(index, 1);
-    },
-    async savePatient() {
-      try {
-        // Form validation
-        if (!this.validateForm()) {
-          return;
-        }
+  medical_history: [],
+  appointments: [],
+  prescriptions: []
+});
 
-        const response = await fetch('http://127.0.0.1:8000/patients/create/', {
-          method: 'POST',
-          headers: {
-            'accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name: this.patient.name,
-            age: parseInt(this.patient.age),
-            gender: this.patient.gender,
-            contact: {
-              phone: this.patient.contact.phone,
-              email: this.patient.contact.email,
-              address: this.patient.contact.address
-            },
-            medical_history: this.patient.medical_history.map(history => ({
-              disease: history.disease,
-              diagnosed_date: history.diagnosed_date,
-              treatment: history.treatment
-            })),
-            appointments: [],
-            prescriptions: []
-          })
-        });
+const addMedicalHistory = (): void => {
+  patient.medical_history.push({
+    disease: '',
+    diagnosed_date: '',
+    treatment: ''
+  });
+};
 
-        if (response.ok) {
-          // Show success message
-          alert('Patient added successfully');
-          sessionStorage.setItem('needsRefresh', 'true');
-          this.router.push('/admin');
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Failed to save patient');
-        }
-      } catch (error) {
-        console.error('Error saving patient:', error);
-        alert(error.message || 'Error saving patient data');
-      }
-    },
-    validateForm() {
-      // Basic validation
-      if (!this.patient.name || !this.patient.age || !this.patient.gender) {
-        alert('Please fill in all basic information fields');
-        return false;
-      }
+const removeMedicalHistory = (index: number): void => {
+  patient.medical_history.splice(index, 1);
+};
 
-      if (!this.patient.contact.phone || !this.patient.contact.email || !this.patient.contact.address) {
-        alert('Please fill in all contact information fields');
-        return false;
-      }
+const validateForm = (): boolean => {
+  // Basic validation
+  if (!patient.name || !patient.age || !patient.gender) {
+    alert('Please fill in all basic information fields');
+    return false;
+  }
 
-      // Validate medical history if any exists
-      if (this.patient.medical_history.length > 0) {
-        const invalidHistory = this.patient.medical_history.some(
-          history => !history.disease || !history.diagnosed_date || !history.treatment
-        );
-        if (invalidHistory) {
-          alert('Please fill in all medical history fields');
-          return false;
-        }
-      }
+  if (!patient.contact.phone || !patient.contact.email || !patient.contact.address) {
+    alert('Please fill in all contact information fields');
+    return false;
+  }
 
-      return true;
-    },
-    cancel() {
-      this.router.push('/admin');  // Return to dashboard
+  // Validate medical history if any exists
+  if (patient.medical_history.length > 0) {
+    const invalidHistory = patient.medical_history.some(
+      history => !history.disease || !history.diagnosed_date || !history.treatment
+    );
+
+    if (invalidHistory) {
+      alert('Please fill in all medical history fields');
+      return false;
     }
   }
+
+  return true;
+};
+
+const savePatient = async (): Promise<void> => {
+  try {
+    // Form validation
+    if (!validateForm()) {
+      return;
+    }
+
+    // Convert patient data for API
+    const patientData = {
+      name: patient.name,
+      age: parseInt(patient.age.toString()),
+      gender: patient.gender,
+      contact: {
+        phone: patient.contact.phone,
+        email: patient.contact.email,
+        address: patient.contact.address
+      },
+      medical_history: patient.medical_history.map(history => ({
+        disease: history.disease,
+        diagnosed_date: history.diagnosed_date,
+        treatment: history.treatment
+      })),
+      appointments: [],
+      prescriptions: []
+    };
+
+    // Convert fetch to axios
+    const response = await axios.post('http://127.0.0.1:8000/patients/create/', patientData, {
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Show success message
+    alert('Patient added successfully');
+    sessionStorage.setItem('needsRefresh', 'true');
+    router.push('/admin');
+  } catch (error: any) {
+    console.error('Error saving patient:', error);
+    const errorMessage = error.response?.data?.detail || 'Error saving patient data';
+    alert(errorMessage);
+  }
+};
+
+const cancel = (): void => {
+  router.push('/admin');  // Return to dashboard
 };
 </script>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import axios from 'axios';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -47,34 +48,42 @@ const deleteStaff = async () => {
       ? `http://127.0.0.1:8000/staffs/delete/by-name/${encodeURIComponent(staffName.value)}`
       : `http://127.0.0.1:8000/staffs/delete/${staffId.value}`;
 
-    const response = await fetch(endpoint, {
-      method: 'DELETE',
+    // Replace fetch with axios
+    const response = await axios.delete(endpoint, {
       headers: {
         'accept': 'application/json'
       }
     });
 
-    // Handle API response
-    if (response.ok) {
-      alert('Staff member deleted successfully!');
-      sessionStorage.setItem('needsRefresh', 'true');
-      router.push('/staff');
-    } else {
-      // Parse error response
-      const data = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
+    // Handle API response - with axios, successful responses come here
+    alert('Staff member deleted successfully!');
+    sessionStorage.setItem('needsRefresh', 'true');
+    router.push('/staff');
 
-      // Display appropriate error message based on status code
-      if (response.status === 400) {
-        throw new Error(data.detail || 'Invalid staff information provided');
-      } else if (response.status === 404) {
-        throw new Error('Staff member not found');
-      } else {
-        throw new Error(data.detail || 'Failed to delete staff member');
-      }
-    }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting staff:', error);
-    errorMessage.value = error.message || 'Error deleting staff member';
+
+    // Handle axios error responses
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      const status = error.response.status;
+      const data = error.response.data;
+
+      if (status === 400) {
+        errorMessage.value = data.detail || 'Invalid staff information provided';
+      } else if (status === 404) {
+        errorMessage.value = 'Staff member not found';
+      } else {
+        errorMessage.value = data.detail || 'Failed to delete staff member';
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      errorMessage.value = 'No response from server. Please try again later.';
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      errorMessage.value = error.message || 'Error deleting staff member';
+    }
   } finally {
     isDeleting.value = false;
   }

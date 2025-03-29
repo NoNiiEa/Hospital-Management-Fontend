@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="p-8">
-            <h1 class=" text-2xl font-bold mb-4">Payment Page</h1>
+            <h1 class="text-2xl font-bold mb-4">Payment Page</h1>
             <!-- Search Bar -->
             <input v-model="searchQuery" type="text" placeholder="Search patient by name..."
                 class="border p-2 w-full mb-4" />
@@ -26,14 +26,38 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue';
-import axios from 'axios';
+import { useApi } from '~/composables/useApi';
 
-const searchQuery = ref('');
-const patients = ref([]);
-const selectedPatient = ref(null);
-const billing = ref(null);
+// Define interfaces for type safety
+interface Patient {
+    id: string;
+    name: string;
+    age: number;
+    contact?: {
+        phone?: string;
+        email?: string;
+        address?: string;
+    };
+}
+
+interface Billing {
+    patient_id: string;
+    appointment_id: string;
+    total_amount: number;
+    status: string;
+    payment_method: string;
+}
+
+// State variables
+const searchQuery = ref<string>('');
+const patients = ref<Patient[]>([]);
+const selectedPatient = ref<Patient | null>(null);
+const billing = ref<Billing | null>(null);
+
+// Get the API composable
+const api = useApi();
 
 // Watch the searchQuery; fetch patients when value changes
 watch(searchQuery, async (newVal) => {
@@ -41,9 +65,10 @@ watch(searchQuery, async (newVal) => {
         patients.value = [];
         return;
     }
+
     try {
-        // Adjust the endpoint as needed
-        const { data } = await axios.get(`http://127.0.0.1:8000/patients/search?name=${newVal}`);
+        // Use the API composable with caching
+        const data = await api.get<Patient[]>(`/patients/search?name=${newVal}`);
         patients.value = data;
     } catch (error) {
         console.error("Error fetching patients:", error);
@@ -52,11 +77,12 @@ watch(searchQuery, async (newVal) => {
 });
 
 // On selecting a patient, fetch billing details
-async function selectPatient(patient) {
+async function selectPatient(patient: Patient) {
     selectedPatient.value = patient;
+
     try {
-        // Adjust the endpoint as needed
-        const { data } = await axios.get(`http://127.0.0.1:8000/billing/by-patient/${patient.id}`);
+        // Use the API composable with caching
+        const data = await api.get<Billing>(`/billing/by-patient/${patient.id}`);
         billing.value = data;
     } catch (error) {
         console.error("Error fetching billing info:", error);
@@ -64,7 +90,3 @@ async function selectPatient(patient) {
     }
 }
 </script>
-
-<style scoped>
-/* ...existing styles or custom styles... */
-</style>

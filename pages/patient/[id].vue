@@ -280,7 +280,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import axios from 'axios';
 import { onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -434,40 +434,38 @@ const goBack = () => {
   }
 };
 
-const fetchPatientData = async () => {
+const fetchPatientData = async (): Promise<void> => {
   try {
-    const response = await fetch(`http://127.0.0.1:8000/patients/get/${route.params.id}`);
-    if (response.ok) {
-      patient.value = await response.json();
-    }
+    const response = await axios.get(`http://127.0.0.1:8000/patients/get/${route.params.id}`);
+    patient.value = response.data;
   } catch (error) {
     console.error("Error fetching patient data:", error);
   }
 };
 
-const fetchAppointments = async () => {
+const fetchAppointments = async (): Promise<void> => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/appointments/");
-    const allAppointments = await response.json();
+    const response = await axios.get("http://127.0.0.1:8000/appointments/");
+    const allAppointments = response.data;
     appointments.value = allAppointments.filter(appointment => appointment.patient_id === route.params.id);
   } catch (error) {
     console.error("Error fetching appointments:", error);
   }
 };
 
-const fetchPrescriptions = async () => {
+const fetchPrescriptions = async (): Promise<void> => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/prescriptions/");
-    prescriptions.value = await response.json();
+    const response = await axios.get("http://127.0.0.1:8000/prescriptions/");
+    prescriptions.value = response.data;
   } catch (error) {
     console.error("Error fetching prescriptions:", error);
   }
 };
 
-const fetchMedicationHistory = async () => {
+const fetchMedicationHistory = async (): Promise<void> => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/medication-history/");
-    medicationHistory.value = await response.json();
+    const response = await axios.get("http://127.0.0.1:8000/medication-history/");
+    medicationHistory.value = response.data;
   } catch (error) {
     console.error("Error fetching medication history:", error);
   }
@@ -489,7 +487,7 @@ const fetchAdmissions = async () => {
   }
 };
 
-const addAppointment = async () => {
+const addAppointment = async (): Promise<void> => {
   try {
     if (appointmentLoading.value) return;
     appointmentLoading.value = true;
@@ -503,30 +501,20 @@ const addAppointment = async () => {
     const appointmentData = { ...newAppointment, patient_id: route.params.id };
     console.log("Adding appointment:", appointmentData);
 
-    const response = await fetch("http://127.0.0.1:8000/appointments/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(appointmentData)
+    const response = await axios.post("http://127.0.0.1:8000/appointments/create", appointmentData, {
+      headers: { "Content-Type": "application/json" }
     });
 
-    if (response.ok) {
-      const addedAppointment = await response.json();
-      appointments.value.push(addedAppointment);
-      showAppointmentForm.value = false;
-
-      newAppointment.date = '';
-      newAppointment.time = '';
-      newAppointment.status = 'Pending';
-      newAppointment.remarks = '';
-
-      alert("Appointment added successfully!");
-    } else {
-      const errorData = await response.json();
-      alert(`Failed to add appointment: ${errorData.message || "Unknown error"}`);
-    }
-  } catch (error) {
+    appointments.value.push(response.data);
+    showAppointmentForm.value = false;
+    newAppointment.date = '';
+    newAppointment.time = '';
+    newAppointment.status = 'Pending';
+    newAppointment.remarks = '';
+    alert("Appointment added successfully!");
+  } catch (error: any) {
     console.error("Error adding appointment:", error);
-    alert("Error adding appointment: " + error.message);
+    alert("Error adding appointment: " + (error.response?.data?.message || error.message || "Unknown error"));
   } finally {
     appointmentLoading.value = false;
   }
@@ -548,7 +536,7 @@ const removeMedication = (index) => {
   }
 };
 
-const submitPrescription = async () => {
+const submitPrescription = async (): Promise<void> => {
   try {
     if (prescriptionLoading.value) return;
     prescriptionLoading.value = true;
@@ -574,19 +562,15 @@ const submitPrescription = async () => {
 
     console.log("Submitting prescription:", JSON.stringify(prescriptionData, null, 2));
 
-    const response = await fetch("http://127.0.0.1:8000/prescriptions/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(prescriptionData)
-    });
+    const response = await axios.post("http://127.0.0.1:8000/prescriptions/create",
+      prescriptionData,
+      { headers: { "Content-Type": "application/json" } }
+    );
 
-    if (!response.ok) throw new Error("Failed to save prescription");
-
-    const newPrescriptionData = await response.json();
-    prescriptions.value.push(newPrescriptionData);
+    prescriptions.value.push(response.data);
     showPrescriptionForm.value = false;
     alert("Prescription added successfully!");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error adding prescription:", error);
     alert("Error adding prescription: " + error.message);
   } finally {
@@ -696,7 +680,7 @@ const addAdmission = async () => {
   }
 };
 
-const toggleAppointmentStatus = async (appointment) => {
+const toggleAppointmentStatus = async (appointment): Promise<void> => {
   try {
     if (isLoading.value) return;
     isLoading.value = true;
@@ -707,25 +691,17 @@ const toggleAppointmentStatus = async (appointment) => {
 
     const newStatus = appointment.status === 'Pending' ? 'Confirmed' : 'Pending';
 
-    const response = await fetch(`http://127.0.0.1:8000/appointments/${appointment.id}/status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ status: newStatus })
-    });
+    const response = await axios.patch(`http://127.0.0.1:8000/appointments/${appointment.id}/status`,
+      { status: newStatus },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
 
-    if (response.ok) {
-      appointment.status = newStatus;
-      alert(`Appointment status updated to ${newStatus}`);
-      await fetchAppointments();
-    } else {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update status');
-    }
-  } catch (error) {
+    appointment.status = newStatus;
+    alert(`Appointment status updated to ${newStatus}`);
+    await fetchAppointments();
+  } catch (error: any) {
     console.error('Error updating appointment status:', error);
-    alert('Failed to update appointment status: ' + error.message);
+    alert('Failed to update appointment status: ' + (error.response?.data?.message || error.message));
   } finally {
     isLoading.value = false;
   }
