@@ -6,6 +6,11 @@
         <button @click="goBack" class="back-button">← Back to Dashboard</button>
       </div>
 
+      <!-- Patient Personal Statistics Dashboard -->
+      <div class="stats-section">
+        <PatientPersonalStats :patientId="route.params.id" :title="`${patient.name}'s Statistics`" />
+      </div>
+
       <div class="info-grid">
         <!-- Basic & Contact Info -->
         <div class="info-card">
@@ -284,6 +289,7 @@
 import axios from 'axios';
 import { onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import PatientPersonalStats from '../../components/Statistics/PatientPersonalStats.vue';
 
 // Access route and router instances
 const route = useRoute();
@@ -1226,5 +1232,10 @@ button {
 .modal-content {
   z-index: 51 !important;
   background: white !important;
+}
+
+/* Stats section styling */
+.stats-section {
+  margin-bottom: 2rem;
 }
 </style>

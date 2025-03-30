@@ -18,6 +18,11 @@
       <div v-else class="ml-4 text-sm opacity-75">กำลังโหลดข้อมูลแพทย์...</div>
     </div>
 
+    <!-- Statistics Overview -->
+    <div class="mt-4">
+      <PatientStatistics title="Your Patient Statistics" />
+    </div>
+
     <!-- Search Bar -->
     <div class="mt-4">
       <input type="text" v-model="searchQuery" placeholder="ค้นหา..." class="w-full p-3 border rounded-lg shadow-sm" />
@@ -120,6 +125,7 @@
 <script setup>
 import axios from 'axios';
 import { onMounted, ref, watch } from "vue";
+import PatientStatistics from '../components/Statistics/PatientStatistics.vue';
 
 const doctors = ref([]);
 const doctor_REF = ref(null);

@@ -8,13 +8,17 @@
 		</div>
 		<!-- right -->
 		<div class="right-side">
+			<!-- Stats Overview Section -->
+			<div class="stats-overview">
+				<PatientStatistics title="Hospital Overview" />
+			</div>
 			<AdminDashBoard />
 		</div>
 	</div>
 </template>
 
-<script>
-export default {};
+<script setup>
+import PatientStatistics from '../components/Statistics/PatientStatistics.vue';
 </script>
 
 <style>
@@ -26,7 +30,8 @@ export default {};
 
 .left-side {
 	margin-top: 5%;
-	width: 0%; /* Adjusted width for balance */
+	width: 0%;
+	/* Adjusted width for balance */
 	/* background-color: #121c3e;
 		color: #121c3e; */
 }
@@ -34,5 +39,10 @@ export default {};
 .right-side {
 	flex: 1;
 	background-color: #f0f4f8;
+	padding: 1rem;
+}
+
+.stats-overview {
+	margin-bottom: 1.5rem;
 }
 </style>

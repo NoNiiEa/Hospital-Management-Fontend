@@ -93,7 +93,7 @@ const mostCommonDisease = ref('');
 const mostCommonDiseaseCount = ref(0);
 
 // New variables for doctor specialization analysis
-const topSpecializations = ref<{name: string, count: number, percentage: number}[]>([]);
+const topSpecializations = ref<{ name: string, count: number, percentage: number }[]>([]);
 const totalDoctors = ref(0);
 
 // Hospital statistics
@@ -398,17 +398,317 @@ const fetchTopSpecializations = async () => {
   }
 };
 
+// ------------------ ADDITIONAL STATE VARIABLES ------------------
+// New variables for advanced patient queries
+const searchQuery = ref('');
+const ageRange = ref([0, 100]);
+const selectedGenders = ref<string[]>([]);
+const multipleSelectedDiseases = ref<string[]>([]);
+const isAdvancedSearchOpen = ref(false);
+const filteredPatients = ref<any[]>([]);
+const totalPatients = ref(0);
+
+// New variables for disease analysis
+const diseaseDistribution = ref<{ disease: string, count: number, percentage: number }[]>([]);
+const genderDistributionByDisease = ref<{ disease: string, male: number, female: number, other: number }[]>([]);
+const ageCategoryDistribution = ref<{ category: string, count: number, percentage: number }[]>([]);
+
+// Variables for age-related queries
+const ageCategories = [
+  { label: '0-17 (Children)', min: 0, max: 17 },
+  { label: '18-30 (Young Adults)', min: 18, max: 30 },
+  { label: '31-45 (Adults)', min: 31, max: 45 },
+  { label: '46-60 (Middle Age)', min: 46, max: 60 },
+  { label: '61-75 (Seniors)', min: 61, max: 75 },
+  { label: '76+ (Elderly)', min: 76, max: 150 }
+];
+
+// New variables for patient tracking
+const selectedPatientId = ref('');
+const patientDetails = ref<any>(null);
+const patientHistoryTimeline = ref<any[]>([]);
+
+// New variables for comparative analysis
+const comparativeAnalysis = ref<{
+  disease: string,
+  avgAge: number,
+  mostCommonTreatment: string,
+  patientCount: number
+}[]>([]);
+
+// ------------------- QUERY FUNCTIONS --------------------
+// Advanced search function
+const performAdvancedSearch = async () => {
+  isLoading.value = true;
+  try {
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
+    totalPatients.value = patients.length;
+
+    // Apply filters
+    filteredPatients.value = patients.filter((patient: any) => {
+      // Name search
+      const nameMatch = !searchQuery.value ||
+        patient.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+
+      // Age range filter
+      const ageMatch = patient.age >= ageRange.value[0] && patient.age <= ageRange.value[1];
+
+      // Gender filter
+      const genderMatch = selectedGenders.value.length === 0 ||
+        selectedGenders.value.includes(patient.gender);
+
+      // Disease filter
+      let diseaseMatch = true;
+      if (multipleSelectedDiseases.value.length > 0) {
+        diseaseMatch = patient.medical_history.some((history: any) =>
+          multipleSelectedDiseases.value.includes(history.disease)
+        );
+      }
+
+      return nameMatch && ageMatch && genderMatch && diseaseMatch;
+    });
+
+    // Sort by age (default)
+    filteredPatients.value.sort((a: any, b: any) => a.age - b.age);
+
+  } catch (error) {
+    errorMessage.value = 'Failed to perform advanced search';
+    console.error(error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Reset search filters
+const resetFilters = () => {
+  searchQuery.value = '';
+  ageRange.value = [0, 100];
+  selectedGenders.value = [];
+  multipleSelectedDiseases.value = [];
+  performAdvancedSearch();
+};
+
+// Analyze disease distribution
+const analyzeDiseaseDistribution = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
+
+    // Count diseases
+    const diseaseCounts: Record<string, number> = {};
+
+    patients.forEach((patient: any) => {
+      patient.medical_history.forEach((history: any) => {
+        const disease = history.disease;
+        diseaseCounts[disease] = (diseaseCounts[disease] || 0) + 1;
+      });
+    });
+
+    // Convert to array and calculate percentages
+    diseaseDistribution.value = Object.entries(diseaseCounts)
+      .map(([disease, count]) => ({
+        disease,
+        count,
+        percentage: Math.round((count / patients.length) * 100)
+      }))
+      .sort((a, b) => b.count - a.count);
+
+  } catch (error) {
+    console.error('Failed to analyze disease distribution', error);
+  }
+};
+
+// Analyze gender distribution by disease
+const analyzeGenderDistributionByDisease = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
+
+    // Initialize tracking object
+    const genderByDisease: Record<string, { male: number, female: number, other: number }> = {};
+
+    // Process each patient
+    patients.forEach((patient: any) => {
+      patient.medical_history.forEach((history: any) => {
+        const disease = history.disease;
+
+        if (!genderByDisease[disease]) {
+          genderByDisease[disease] = { male: 0, female: 0, other: 0 };
+        }
+
+        // Count gender
+        if (patient.gender === 'Male') {
+          genderByDisease[disease].male++;
+        } else if (patient.gender === 'Female') {
+          genderByDisease[disease].female++;
+        } else {
+          genderByDisease[disease].other++;
+        }
+      });
+    });
+
+    // Convert to array format
+    genderDistributionByDisease.value = Object.entries(genderByDisease)
+      .map(([disease, counts]) => ({
+        disease,
+        ...counts
+      }))
+      .sort((a, b) => (b.male + b.female + b.other) - (a.male + a.female + a.other));
+
+  } catch (error) {
+    console.error('Failed to analyze gender distribution by disease', error);
+  }
+};
+
+// Analyze age category distribution
+const analyzeAgeCategoryDistribution = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
+
+    // Initialize counts
+    const categoryCounts: Record<string, number> = {};
+    ageCategories.forEach(category => {
+      categoryCounts[category.label] = 0;
+    });
+
+    // Count patients in each category
+    patients.forEach((patient: any) => {
+      const age = patient.age;
+      for (const category of ageCategories) {
+        if (age >= category.min && age <= category.max) {
+          categoryCounts[category.label]++;
+          break;
+        }
+      }
+    });
+
+    // Calculate percentages
+    ageCategoryDistribution.value = Object.entries(categoryCounts)
+      .map(([category, count]) => ({
+        category,
+        count,
+        percentage: Math.round((count / patients.length) * 100)
+      }));
+
+  } catch (error) {
+    console.error('Failed to analyze age category distribution', error);
+  }
+};
+
+// Get patient details
+const getPatientDetails = async (patientId: string) => {
+  if (!patientId) return;
+
+  isLoading.value = true;
+  try {
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
+
+    patientDetails.value = patients.find((p: any) => p.id === patientId);
+
+    if (patientDetails.value) {
+      // Create timeline from medical history
+      patientHistoryTimeline.value = patientDetails.value.medical_history.map((history: any) => ({
+        date: new Date(history.diagnosed_date),
+        formattedDate: formatDate(history.diagnosed_date),
+        disease: history.disease,
+        treatment: history.treatment,
+        type: 'diagnosis'
+      })).sort((a: any, b: any) => a.date - b.date);
+    }
+
+  } catch (error) {
+    errorMessage.value = 'Failed to get patient details';
+    console.error(error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Comparative analysis of diseases
+const performComparativeAnalysis = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
+
+    // Track disease statistics
+    const diseaseStats: Record<string, {
+      ageSum: number,
+      count: number,
+      treatments: Record<string, number>
+    }> = {};
+
+    // Process each patient
+    patients.forEach((patient: any) => {
+      patient.medical_history.forEach((history: any) => {
+        const disease = history.disease;
+        const treatment = history.treatment;
+
+        if (!diseaseStats[disease]) {
+          diseaseStats[disease] = {
+            ageSum: 0,
+            count: 0,
+            treatments: {}
+          };
+        }
+
+        diseaseStats[disease].ageSum += patient.age;
+        diseaseStats[disease].count++;
+
+        // Track treatment frequency
+        diseaseStats[disease].treatments[treatment] =
+          (diseaseStats[disease].treatments[treatment] || 0) + 1;
+      });
+    });
+
+    // Calculate averages and find most common treatments
+    comparativeAnalysis.value = Object.entries(diseaseStats)
+      .map(([disease, stats]) => {
+        // Find most common treatment
+        let maxCount = 0;
+        let mostCommonTreatment = '';
+
+        Object.entries(stats.treatments).forEach(([treatment, count]) => {
+          if (count > maxCount) {
+            maxCount = count;
+            mostCommonTreatment = treatment;
+          }
+        });
+
+        return {
+          disease,
+          avgAge: Math.round(stats.ageSum / stats.count),
+          mostCommonTreatment,
+          patientCount: stats.count
+        };
+      })
+      .sort((a, b) => b.patientCount - a.patientCount);
+
+  } catch (error) {
+    console.error('Failed to perform comparative analysis', error);
+  }
+};
+
 // ------------------- LIFECYCLE HOOKS --------------------
 onMounted(async () => {
   await refreshData();
+  await performAdvancedSearch();
+  await analyzeDiseaseDistribution();
+  await analyzeGenderDistributionByDisease();
+  await analyzeAgeCategoryDistribution();
+  await performComparativeAnalysis();
 });
 
-// Watch for changes in selected disease
-watch(selectedDisease, async () => {
-  isLoading.value = true;
-  await fetchYoungestPatientsWithDisease();
-  isLoading.value = false;
-});
+// Watch for search query changes
+watch([searchQuery, ageRange, selectedGenders, multipleSelectedDiseases],
+  () => {
+    performAdvancedSearch();
+  },
+  { deep: true }
+);
+
 </script>
 
 <template>
@@ -430,14 +730,8 @@ watch(selectedDisease, async () => {
         <div class="flex flex-col sm:flex-row justify-between items-center p-2 bg-primary-50">
           <h1 class="text-2xl font-bold text-primary-800">Medical Data Analysis</h1>
           <div class="flex space-x-2 mt-3 sm:mt-0">
-            <UButton
-              color="primary"
-              icon="i-heroicons-arrows-right-left"
-              @click="refreshData"
-              :loading="isLoading"
-              :disabled="isLoading"
-              class="shadow-sm"
-            >
+            <UButton color="primary" icon="i-heroicons-arrows-right-left" @click="refreshData" :loading="isLoading"
+              :disabled="isLoading" class="shadow-sm">
               Refresh Data
             </UButton>
           </div>
@@ -446,7 +740,8 @@ watch(selectedDisease, async () => {
 
       <div class="p-4 bg-gradient-to-r from-primary-50 to-white">
         <p class="text-gray-700">
-          This dashboard provides real-time analytics on patient demographics, disease patterns, and medical specializations.
+          This dashboard provides real-time analytics on patient demographics, disease patterns, and medical
+          specializations.
           The data is updated continuously to ensure accuracy in healthcare planning and resource allocation.
         </p>
       </div>
@@ -504,6 +799,348 @@ watch(selectedDisease, async () => {
       </UCard>
     </div>
 
+    <!-- Advanced Patient Query Section -->
+    <UCard class="mb-6 shadow-md border-t-2 border-indigo-400">
+      <template #header>
+        <div class="flex justify-between items-center p-3 bg-indigo-50">
+          <h2 class="text-xl font-semibold text-indigo-800 flex items-center">
+            <UIcon name="i-heroicons-magnifying-glass" class="mr-2" /> Advanced Patient Query
+          </h2>
+          <UButton color="indigo" :icon="isAdvancedSearchOpen ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+            variant="ghost" @click="isAdvancedSearchOpen = !isAdvancedSearchOpen" />
+        </div>
+      </template>
+
+      <div v-if="isAdvancedSearchOpen" class="p-4 bg-gradient-to-r from-indigo-50 to-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <UFormGroup label="Patient Name Search">
+              <UInput v-model="searchQuery" placeholder="Enter name..." icon="i-heroicons-magnifying-glass" />
+            </UFormGroup>
+          </div>
+
+          <div>
+            <UFormGroup label="Age Range">
+              <URange v-model="ageRange" min="0" max="100" :step="1" />
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>{{ ageRange[0] }} years</span>
+                <span>{{ ageRange[1] }} years</span>
+              </div>
+            </UFormGroup>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <UFormGroup label="Gender">
+              <UCheckbox v-model="selectedGenders" value="Male" label="Male" />
+              <UCheckbox v-model="selectedGenders" value="Female" label="Female" />
+              <UCheckbox v-model="selectedGenders" value="other" label="Other" />
+            </UFormGroup>
+          </div>
+
+          <div>
+            <UFormGroup label="Medical Conditions">
+              <USelect v-model="multipleSelectedDiseases" :options="diseaseOptions" multiple />
+            </UFormGroup>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-2 mt-4">
+          <UButton color="gray" variant="soft" @click="resetFilters">Reset Filters</UButton>
+          <UButton color="indigo" @click="performAdvancedSearch" :loading="isLoading">Search Patients</UButton>
+        </div>
+      </div>
+
+      <div v-if="filteredPatients.length > 0" class="p-4 bg-white">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-semibold text-gray-700">
+            Found {{ filteredPatients.length }} patients out of {{ totalPatients }}
+          </h3>
+          <UBadge color="indigo" size="lg">{{ filteredPatients.length }} patients</UBadge>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name
+                </th>
+                <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age
+                </th>
+                <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Gender
+                </th>
+                <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Medical
+                  Conditions</th>
+                <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="patient in filteredPatients.slice(0, 10)" :key="patient.id" class="hover:bg-gray-50">
+                <td class="py-2 px-4">{{ patient.name }}</td>
+                <td class="py-2 px-4">
+                  <UBadge :color="getAgeColor(patient.age)">{{ patient.age }}</UBadge>
+                </td>
+                <td class="py-2 px-4">{{ patient.gender }}</td>
+                <td class="py-2 px-4">
+                  <div class="flex flex-wrap gap-1">
+                    <UChip v-for="(history, idx) in patient.medical_history" :key="idx" size="sm"
+                      :color="getRandomColor(history.disease)">
+                      {{ history.disease }}
+                    </UChip>
+                  </div>
+                </td>
+                <td class="py-2 px-4">
+                  <UButton size="xs" color="indigo"
+                    @click="selectedPatientId = patient.id; getPatientDetails(patient.id)">
+                    View Details
+                  </UButton>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="filteredPatients.length > 10" class="mt-4 text-center text-sm text-gray-500">
+          Showing 10 of {{ filteredPatients.length }} results. Refine your search to see more specific results.
+        </div>
+      </div>
+
+      <div v-else-if="!isLoading && filteredPatients.length === 0" class="p-8 text-center">
+        <UIcon name="i-heroicons-face-frown" class="text-4xl mx-auto mb-2 text-gray-400" />
+        <p class="text-gray-500">No patients match your search criteria. Try adjusting your filters.</p>
+      </div>
+    </UCard>
+
+    <!-- Patient Details Modal -->
+    <!-- <UModal v-model="selectedPatientId !== ''"> -->
+    <UCard>
+      <template #header>
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold">Patient Details</h3>
+          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="selectedPatientId = ''" />
+        </div>
+      </template>
+
+      <div v-if="patientDetails" class="space-y-4">
+        <div class="flex flex-col md:flex-row md:space-x-4">
+          <div class="w-full md:w-1/3 p-3 bg-gray-50 rounded-lg">
+            <h4 class="font-semibold text-gray-700 mb-2">Personal Information</h4>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Name:</span>
+                <span class="font-medium">{{ patientDetails.name }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Age:</span>
+                <span class="font-medium">{{ patientDetails.age }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Gender:</span>
+                <span class="font-medium">{{ patientDetails.gender }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full md:w-2/3 p-3 bg-gray-50 rounded-lg">
+            <h4 class="font-semibold text-gray-700 mb-2">Contact Information</h4>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Phone:</span>
+                <span class="font-medium">{{ patientDetails.contact.phone }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Email:</span>
+                <span class="font-medium">{{ patientDetails.contact.email }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Address:</span>
+                <span class="font-medium">{{ patientDetails.contact.address }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <h4 class="font-semibold text-gray-700 mb-2">Medical History</h4>
+          <div class="border-l-2 border-indigo-200 pl-4 space-y-4">
+            <div v-for="(event, index) in patientHistoryTimeline" :key="index" class="relative pb-4">
+              <div class="absolute -left-6 mt-1 h-4 w-4 rounded-full bg-indigo-500"></div>
+              <div class="flex flex-col">
+                <span class="text-sm text-gray-500">{{ event.formattedDate }}</span>
+                <span class="font-medium">Diagnosed with {{ event.disease }}</span>
+                <span class="text-sm">Treatment: <UBadge :color="getTreatmentColor(event.treatment)">{{
+                  event.treatment }}
+                  </UBadge></span>
+              </div>
+            </div>
+
+            <div v-if="patientHistoryTimeline.length === 0" class="text-gray-500 italic">
+              No medical history records available
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <h4 class="font-semibold text-gray-700 mb-2">Appointments & Prescriptions</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-medium">Appointments</span>
+                <UBadge color="blue">{{ patientDetails.appointments.length }}</UBadge>
+              </div>
+              <div v-if="patientDetails.appointments.length === 0" class="text-gray-500 italic">
+                No appointment records
+              </div>
+            </div>
+
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-medium">Prescriptions</span>
+                <UBadge color="amber">{{ patientDetails.prescriptions.length }}</UBadge>
+              </div>
+              <div v-if="patientDetails.prescriptions.length === 0" class="text-gray-500 italic">
+                No prescription records
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="isLoading" class="flex justify-center py-8">
+        <ULoader />
+      </div>
+
+      <div v-else class="text-center py-8 text-gray-500">
+        <UIcon name="i-heroicons-face-frown" class="text-4xl mx-auto mb-2 text-gray-400" />
+        Patient data not available
+      </div>
+    </UCard>
+    <!-- </UModal> -->
+
+    <!-- Disease Analysis Section -->
+    <UCard class="mb-6 shadow-md border-t-2 border-purple-400">
+      <template #header>
+        <div class="flex justify-between items-center p-3 bg-purple-50">
+          <h2 class="text-xl font-semibold text-purple-800 flex items-center">
+            <UIcon name="i-heroicons-chart-bar" class="mr-2" /> Disease Analysis & Distribution
+          </h2>
+          <UButton color="purple" variant="ghost" icon="i-heroicons-arrow-path" :loading="isLoading"
+            @click="analyzeDiseaseDistribution" />
+        </div>
+      </template>
+
+      <div v-if="isLoading" class="flex justify-center py-8">
+        <ULoader />
+      </div>
+      <div v-else class="p-4 bg-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 class="text-lg font-medium text-purple-800 mb-3">Disease Distribution</h3>
+            <div class="space-y-3">
+              <div v-for="(item, index) in diseaseDistribution.slice(0, 6)" :key="index"
+                class="border-b border-gray-100 pb-2">
+                <div class="flex justify-between mb-1">
+                  <span class="font-medium">{{ item.disease }}</span>
+                  <span class="text-purple-600 font-semibold">{{ item.count }} patients ({{ item.percentage }}%)</span>
+                </div>
+                <div class="h-2 bg-gray-200 rounded-full">
+                  <div class="h-full bg-purple-500 rounded-full" :style="`width: ${item.percentage}%`"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-medium text-purple-800 mb-3">Gender Distribution by Disease</h3>
+            <div class="space-y-3">
+              <div v-for="(item, index) in genderDistributionByDisease.slice(0, 6)" :key="index"
+                class="border-b border-gray-100 pb-2">
+                <div class="flex justify-between mb-1">
+                  <span class="font-medium">{{ item.disease }}</span>
+                </div>
+                <div class="flex space-x-2">
+                  <div class="flex-1">
+                    <div class="h-4 bg-blue-200 rounded-full overflow-hidden">
+                      <div class="h-full bg-blue-500 rounded-full"
+                        :style="`width: ${item.male / (item.male + item.female + item.other) * 100}%`"></div>
+                    </div>
+                    <div class="text-xs text-center mt-1">Male: {{ item.male }}</div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="h-4 bg-pink-200 rounded-full overflow-hidden">
+                      <div class="h-full bg-pink-500 rounded-full"
+                        :style="`width: ${item.female / (item.male + item.female + item.other) * 100}%`"></div>
+                    </div>
+                    <div class="text-xs text-center mt-1">Female: {{ item.female }}</div>
+                  </div>
+                  <div v-if="item.other > 0" class="flex-1">
+                    <div class="h-4 bg-gray-200 rounded-full overflow-hidden">
+                      <div class="h-full bg-gray-500 rounded-full"
+                        :style="`width: ${item.other / (item.male + item.female + item.other) * 100}%`"></div>
+                    </div>
+                    <div class="text-xs text-center mt-1">Other: {{ item.other }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-lg font-medium text-purple-800 mb-3">Age Category Distribution</h3>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div v-for="(item, index) in ageCategoryDistribution" :key="index"
+              class="bg-purple-50 p-3 rounded-lg text-center">
+              <div class="text-lg font-semibold text-purple-600">{{ item.count }}</div>
+              <div class="text-sm">{{ item.category }}</div>
+              <div class="text-xs text-gray-500">{{ item.percentage }}%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparative Disease Analysis -->
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-lg font-medium text-purple-800 mb-3">Comparative Disease Analysis</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+              <thead class="bg-purple-50">
+                <tr>
+                  <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Disease</th>
+                  <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Avg.
+                    Age</th>
+                  <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Most
+                    Common Treatment</th>
+                  <th class="py-2 px-4 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Patient Count</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                <tr v-for="(analysis, index) in comparativeAnalysis.slice(0, 8)" :key="index" class="hover:bg-gray-50">
+                  <td class="py-2 px-4 font-medium">{{ analysis.disease }}</td>
+                  <td class="py-2 px-4">{{ analysis.avgAge }} years</td>
+                  <td class="py-2 px-4">
+                    <UBadge :color="getTreatmentColor(analysis.mostCommonTreatment)">
+                      {{ analysis.mostCommonTreatment }}
+                    </UBadge>
+                  </td>
+                  <td class="py-2 px-4">
+                    <UBadge color="purple">{{ analysis.patientCount }}</UBadge>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </UCard>
 
     <!-- Doctor Expertise Section -->
     <UCard class="mb-6 shadow-md border-t-2 border-green-400">
@@ -512,14 +1149,8 @@ watch(selectedDisease, async () => {
           <h2 class="text-xl font-semibold text-green-800 flex items-center">
             <UIcon name="i-heroicons-academic-cap" class="mr-2" /> Doctors with Most Expertise
           </h2>
-          <UButton
-            color="green"
-            variant="ghost"
-            icon="i-heroicons-arrow-path"
-            :loading="isLoading"
-            @click="fetchDoctorsExpertise"
-            class="hover:bg-green-100"
-          />
+          <UButton color="green" variant="ghost" icon="i-heroicons-arrow-path" :loading="isLoading"
+            @click="fetchDoctorsExpertise" class="hover:bg-green-100" />
         </div>
       </template>
       <div v-if="isLoading" class="flex justify-center py-8 bg-white">
@@ -530,7 +1161,8 @@ watch(selectedDisease, async () => {
         No doctor data available
       </div>
       <div v-else class="p-4 bg-white">
-        <UTable :columns="doctorColumns" :rows="doctorsExpertise" class="border rounded-lg overflow-hidden" :ui="{ thead: 'bg-green-50' }">
+        <UTable :columns="doctorColumns" :rows="doctorsExpertise" class="border rounded-lg overflow-hidden"
+          :ui="{ thead: 'bg-green-50' }">
           <template #name-data="{ row }">
             <div class="font-medium">{{ row.name }}</div>
           </template>
@@ -561,13 +1193,15 @@ watch(selectedDisease, async () => {
               <div class="p-4">
                 <h4 class="text-md font-medium text-green-800 mb-3">Treatment Success Rate by Doctor</h4>
                 <div class="space-y-3">
-                  <div v-for="(doctor, index) in doctorsExpertise.slice(0, 3)" :key="index" class="border-b border-gray-100 pb-2">
+                  <div v-for="(doctor, index) in doctorsExpertise.slice(0, 3)" :key="index"
+                    class="border-b border-gray-100 pb-2">
                     <div class="flex justify-between mb-1">
                       <span class="font-medium">{{ doctor.name }}</span>
                       <span class="text-green-600 font-semibold">{{ 85 + Math.floor(Math.random() * 10) }}%</span>
                     </div>
                     <div class="h-2 bg-gray-200 rounded-full">
-                      <div class="h-full bg-green-500 rounded-full" :style="`width: ${85 + Math.floor(Math.random() * 10)}%`"></div>
+                      <div class="h-full bg-green-500 rounded-full"
+                        :style="`width: ${85 + Math.floor(Math.random() * 10)}%`"></div>
                     </div>
                     <div class="text-xs text-gray-500 mt-1">Based on patient recovery and follow-up appointments</div>
                   </div>
@@ -579,7 +1213,8 @@ watch(selectedDisease, async () => {
               <div class="p-4">
                 <h4 class="text-md font-medium text-green-800 mb-3">Most Treated Conditions</h4>
                 <div class="space-y-4">
-                  <div v-for="(condition, index) in ['Diabetes', 'Heart Disease', 'Arthritis']" :key="index" class="flex items-center">
+                  <div v-for="(condition, index) in ['Diabetes', 'Heart Disease', 'Arthritis']" :key="index"
+                    class="flex items-center">
                     <div class="w-3 h-3 rounded-full mr-2" :class="`bg-${getRandomColor(condition)}-500`"></div>
                     <div class="flex-grow">
                       <div class="flex justify-between">
@@ -587,9 +1222,8 @@ watch(selectedDisease, async () => {
                         <span class="text-gray-600 text-sm">{{ 15 + index * 5 }} doctors</span>
                       </div>
                       <div class="h-1.5 bg-gray-200 rounded-full mt-1">
-                        <div class="h-full rounded-full"
-                            :class="`bg-${getRandomColor(condition)}-500`"
-                            :style="`width: ${(15 + index * 5) / 45 * 100}%`"></div>
+                        <div class="h-full rounded-full" :class="`bg-${getRandomColor(condition)}-500`"
+                          :style="`width: ${(15 + index * 5) / 45 * 100}%`"></div>
                       </div>
                     </div>
                   </div>
@@ -643,7 +1277,8 @@ watch(selectedDisease, async () => {
           <div class="mt-6 p-4 border border-gray-100 rounded-lg bg-gray-50">
             <h4 class="font-medium text-gray-700 mb-3">Doctor-Patient Matching Analysis</h4>
             <div class="text-sm text-gray-600 mb-3">
-              Our analysis shows that doctors with specialized expertise in a patient's condition provide better outcomes.
+              Our analysis shows that doctors with specialized expertise in a patient's condition provide better
+              outcomes.
               Current matching efficiency:
             </div>
 
