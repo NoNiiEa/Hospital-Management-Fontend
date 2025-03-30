@@ -123,7 +123,7 @@
                                 <div>
                                     <span class="font-medium">{{ patient.name }}</span>
                                     <span class="text-sm text-gray-500 ml-2">({{ patient.age }} ปี, {{ patient.gender
-                                        }})</span>
+                                    }})</span>
                                 </div>
                                 <button @click.stop="addPatientToDoctor(patient.id)"
                                     class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm">
@@ -219,27 +219,64 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import axios from 'axios';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
+// TypeScript Interfaces
+interface Doctor {
+    id: string;
+    name: string;
+    specialization: string;
+    contact?: {
+        phone?: string;
+        email?: string;
+        address?: string;
+    };
+    schedule?: ScheduleItem[];
+    patients?: PatientItem[];
+}
+
+interface ScheduleItem {
+    day: string;
+    timeslot: string[];
+}
+
+interface PatientItem {
+    patient_id: string;
+    diagnosis: string;
+    last_visit?: string;
+}
+
+interface Patient {
+    id: string;
+    name: string;
+    age: number;
+    gender: string;
+    contact?: {
+        phone?: string;
+        email?: string;
+        address?: string;
+    };
+}
+
 const route = useRoute();
 const router = useRouter();
-const doctorId = route.params.id;
+const doctorId = route.params.id as string;
 
 // State
-const doctor = ref(null);
+const doctor = ref<Doctor | null>(null);
 const isLoading = ref(true);
-const error = ref(null);
-const patientNames = ref({});
+const error = ref<string | null>(null);
+const patientNames = ref<Record<string, string>>({});
 const showPatientSearch = ref(false);
 
 // Patient search and management
-const allPatients = ref([]);
+const allPatients = ref<Patient[]>([]);
 const patientSearchQuery = ref("");
-const patientSearchResults = ref([]);
-const selectedPatient = ref(null);
+const patientSearchResults = ref<Patient[]>([]);
+const selectedPatient = ref<Patient | null>(null);
 const isSearchLoading = ref(false);
 
 // Patient list filtering
@@ -285,7 +322,7 @@ const fetchDoctor = async () => {
 };
 
 // Fetch patient details dynamically
-const fetchPatientData = async (patientId) => {
+const fetchPatientData = async (patientId: string) => {
     try {
         const response = await axios.get(`http://127.0.0.1:8000/patients/get/${patientId}`);
         if (response.status === 200) {
@@ -338,16 +375,16 @@ const searchPatients = () => {
 };
 
 // Select a patient to view details
-const selectPatient = (patient) => {
+const selectPatient = (patient: Patient) => {
     selectedPatient.value = patient;
 };
 
 // Add a patient to the doctor's patient list
-const addPatientToDoctor = async (patientId) => {
+const addPatientToDoctor = async (patientId: string) => {
     if (!doctor.value || !patientId) return;
 
     // Check if patient already exists
-    const patientExists = doctor.value.patients.some(p => p.patient_id === patientId);
+    const patientExists = doctor.value.patients?.some(p => p.patient_id === patientId);
     if (patientExists) {
         alert("ผู้ป่วยนี้อยู่ในรายชื่อของแพทย์แล้ว");
         return;
@@ -391,11 +428,11 @@ const addPatientToDoctor = async (patientId) => {
 };
 
 // Remove a patient from the doctor's patient list
-const removePatientFromDoctor = async (patientId) => {
+const removePatientFromDoctor = async (patientId: string) => {
     if (!confirm("คุณแน่ใจหรือไม่ที่จะลบผู้ป่วยนี้ออกจากรายชื่อ?")) return;
 
     try {
-        const doctorId = doctor.value.id;
+        const doctorId = doctor.value?.id;
         if (!doctorId) {
             alert("ไม่พบรหัสแพทย์ กรุณาลองใหม่อีกครั้ง");
             return;

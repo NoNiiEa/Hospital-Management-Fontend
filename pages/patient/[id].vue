@@ -71,7 +71,7 @@
         <div class="modal-content">
           <h2>Add Appointment</h2>
           <label>Doctor ID:</label>
-          <input type="text" v-model="newAppointment.doctor_id" placeholder="{{doctor_id}} || 'Enter doctor ID'" />
+          <input type="text" v-model="newAppointment.doctor_id" :placeholder="'Enter doctor ID'" />
           <label>Date:</label>
           <input type="date" v-model="newAppointment.date" />
           <label>Time:</label>
@@ -227,7 +227,7 @@
         <label>Expected Discharge Date:</label>
         <input type="date" v-model="newAdmission.expected_discharge_date" />
         <label>Doctor ID:</label>
-        <input type="text" v-model="newAdmission.doctor_id" />
+        <input type="text" v-model="newAdmission.doctor_id" :placeholder="'Enter doctor ID'" />
         <label>Department:</label>
         <input type="text" v-model="newAdmission.department" />
         <label>Admission Reason:</label>
@@ -315,10 +315,28 @@ const billingLoading = ref(false);
 
 // Helper function to find the most relevant doctor for a patient
 const findPatientDoctor = () => {
+  // First check if we have a doctor ID from the route query (from another page)
   if (route.query.from) {
     return route.query.from;
   }
 
+  // Then check if there's a doctor ID in the most recent admission
+  if (admissions.value && admissions.value.length > 0) {
+    // Sort admissions by date (most recent first)
+    const sortedAdmissions = [...admissions.value].sort((a, b) => {
+      const dateA = a.admission_date ? new Date(a.admission_date) : new Date(0);
+      const dateB = b.admission_date ? new Date(b.admission_date) : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    // Use the most recent admission's doctor ID if available
+    if (sortedAdmissions[0] && sortedAdmissions[0].doctor_id) {
+      console.log("Using doctor ID from most recent admission:", sortedAdmissions[0].doctor_id);
+      return sortedAdmissions[0].doctor_id;
+    }
+  }
+
+  // Then check appointments
   if (patient.value && patient.value.appointments && appointments.value.length > 0) {
     const sortedAppointments = [...appointments.value].sort((a, b) =>
       new Date(b.date) - new Date(a.date)
@@ -329,6 +347,7 @@ const findPatientDoctor = () => {
     }
   }
 
+  // Finally check prescriptions
   if (prescriptions.value && prescriptions.value.length > 0) {
     const sortedPrescriptions = [...prescriptions.value].sort((a, b) =>
       new Date(b.date) - new Date(a.date)
@@ -1173,19 +1192,28 @@ button {
   z-index: 10 !important;
 }
 
-.add-button, .view-button, .save-button, .cancel-button {
+.add-button,
+.view-button,
+.save-button,
+.cancel-button {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 10;
   font-weight: bold;
 }
 
-.add-button:hover, .view-button:hover, .save-button:hover, .cancel-button:hover {
+.add-button:hover,
+.view-button:hover,
+.save-button:hover,
+.cancel-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
-.add-button:active, .view-button:active, .save-button:active, .cancel-button:active {
+.add-button:active,
+.view-button:active,
+.save-button:active,
+.cancel-button:active {
   transform: translateY(0);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
