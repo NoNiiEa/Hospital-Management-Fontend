@@ -20,16 +20,16 @@ import { useRouter } from 'vue-router';
 // -------------------- TYPE DEFINITIONS ----------------------
 // All interfaces and types - Modified only by development team
 interface Contact {
-    phone: string
-    email : string
-    address : string
+  phone: string
+  email: string
+  address: string
 }
 
 interface staff {
-    name:string;
-    role:string;
-    contact : Contact
-    shift : string
+  name: string;
+  role: string;
+  contact: Contact
+  shift: string
 }
 
 const inputName = ref<string>("");
@@ -110,7 +110,7 @@ const submitForm = async () => {
         sessionStorage.setItem('needsRefresh', 'true');
 
         // Navigate back to staff list page
-        router.push('/staff');
+        router.push('/admin');
       } else {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to create staff member');
@@ -226,12 +226,8 @@ const isSubmitting = ref(false);
 
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Full Name:</label>
-            <input
-              type="text"
-              v-model="inputName"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input type="text" v-model="inputName" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             <p v-if="validationErrors.name" class="mt-1 text-sm text-red-600">
               {{ validationErrors.name }}
             </p>
@@ -239,11 +235,8 @@ const isSubmitting = ref(false);
 
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Role:</label>
-            <select
-              v-model="inputRole"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+            <select v-model="inputRole" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">Select role</option>
               <option v-for="option in roleOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
@@ -261,12 +254,8 @@ const isSubmitting = ref(false);
 
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number:</label>
-            <input
-              type="tel"
-              v-model="contactForm.phone"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input type="tel" v-model="contactForm.phone" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             <p v-if="validationErrors['contact.phone']" class="mt-1 text-sm text-red-600">
               {{ validationErrors['contact.phone'] }}
             </p>
@@ -274,12 +263,8 @@ const isSubmitting = ref(false);
 
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Email Address:</label>
-            <input
-              type="email"
-              v-model="contactForm.email"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input type="email" v-model="contactForm.email" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             <p v-if="validationErrors['contact.email']" class="mt-1 text-sm text-red-600">
               {{ validationErrors['contact.email'] }}
             </p>
@@ -287,12 +272,8 @@ const isSubmitting = ref(false);
 
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
-            <textarea
-              v-model="contactForm.address"
-              required
-              rows="3"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            ></textarea>
+            <textarea v-model="contactForm.address" required rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
           </div>
         </div>
 
@@ -304,15 +285,8 @@ const isSubmitting = ref(false);
             <label class="block text-sm font-medium text-gray-700 mb-1">Shift:</label>
             <div class="space-y-2 mt-2">
               <div v-for="option in shiftOptions" :key="option.value" class="flex items-center">
-                <input
-                  type="radio"
-                  :id="option.value"
-                  :value="option.value"
-                  v-model="inputShift"
-                  name="shift"
-                  required
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
+                <input type="radio" :id="option.value" :value="option.value" v-model="inputShift" name="shift" required
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
                 <label :for="option.value" class="ml-2 block text-sm text-gray-700">{{ option.label }}</label>
               </div>
             </div>
@@ -324,25 +298,17 @@ const isSubmitting = ref(false);
 
         <!-- Form Actions -->
         <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-          <button
-            type="button"
-            @click="cancel"
-            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
-          >
+          <button type="button" @click="cancel"
+            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
             Cancel
           </button>
-          <button
-            type="button"
-            @click="resetFormData"
-            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
-          >
+          <button type="button" @click="resetFormData"
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200">
             Reset
           </button>
-          <button
-            type="submit"
+          <button type="submit"
             class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            :disabled="isSubmitting"
-          >
+            :disabled="isSubmitting">
             {{ isSubmitting ? 'Saving...' : 'Save Staff Member' }}
           </button>
         </div>
@@ -350,5 +316,3 @@ const isSubmitting = ref(false);
     </div>
   </div>
 </template>
-
-
