@@ -39,65 +39,55 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import axios from 'axios';
-import { reactive } from 'vue';
-import { useRouter } from 'vue-router';
-
-// Define interfaces
-interface Contact {
-  phone: string;
-  email: string;
-  address: string;
-}
-
-interface MedicalPersonnel {
-  name: string;
-  specialization: string;
-  contact: Contact;
-  schedule: any[];
-  patients: any[];
-}
-
-const router = useRouter();
-
-const formData = reactive<MedicalPersonnel>({
-  name: '',
-  specialization: '',
-  contact: {
-    phone: '',
-    email: '',
-    address: ''
-  },
-  schedule: [],
-  patients: []
-});
-
-const submitForm = async (): Promise<void> => {
-  try {
-    const response = await axios.post('http://127.0.0.1:8000/doctors/create', formData, {
-      headers: {
-        'accept': 'application/json',
-        'Content-Type': 'application/json'
+<script>
+export default {
+  data() {
+    return {
+      formData: {
+        name: '',
+        specialization: '',
+        contact: {
+          phone: '',
+          email: '',
+          address: ''
+        },
+        schedule: [],
+        patients: []
       }
-    });
+    }
+  },
+  methods: {
+    async submitForm() {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/doctors/create', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.formData)
+        });
 
-    alert('Medical personnel added successfully!');
-    router.push('/admin');
-
-    // Add refresh after navigation
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error adding medical personnel');
+        if (response.ok) {
+          alert('Medical personnel added successfully!')
+          this.$router.push('/admin')
+          // Add refresh after navigation
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        } else {
+          alert('Failed to add medical personnel')
+        }
+      } catch (error) {
+        console.error('Error:', error)
+        alert('Error adding medical personnel')
+      }
+    },
+    goBack() {
+      this.$router.push('/admin')
+    }
   }
-};
-
-const goBack = (): void => {
-  router.push('/admin');
-};
+}
 </script>
 
 <style scoped>

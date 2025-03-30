@@ -1,69 +1,110 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
-import { useApi } from '~/composables/useApi';
 
-// Interfaces
+// ---------------------- IMPORTS SECTION ----------------------
+import { computed, onMounted, ref, watch } from 'vue'
 interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: 'admin' | 'user' | 'guest';
-  createdAt: Date;
-  lastLogin?: Date;
+  id: number
+  name: string
+  email: string
+  role: 'admin' | 'user' | 'guest'
+  createdAt: Date
+  lastLogin?: Date
 }
 
-interface Patient {
-  id: string;
-  name: string;
-  age: number;
-  gender: string;
-  medical_history: MedicalHistory[];
-  contact?: {
-    phone: string;
-    email: string;
-    address: string;
-  };
+interface ApiResponse<T> {
+  data: T
+  status: number
+  message: string
 }
 
-interface MedicalHistory {
-  disease: string;
-  diagnosed_date: string;
-  treatment: string;
+type SortDirection = 'asc' | 'desc'
+
+// ------------------ REACTIVE STATE SECTION ------------------
+// Core reactive variables
+const isLoading = ref(false)
+const errorMessage = ref('')
+const userData = ref<User | null>(null)
+const page = ref(1)
+const perPage = ref(10)
+const sortBy = ref('id')
+const sortDirection = ref<SortDirection>('asc')
+
+// ------------------ COMPUTED PROPERTIES --------------------
+// Derived values based on reactive state
+const isAdmin = computed(() => userData.value?.role === 'admin')
+const canEdit = computed(() => isAdmin.value || userData.value?.id === 1)
+const formattedDate = computed(() => {
+  return userData.value?.createdAt ? new Date(userData.value.createdAt).toLocaleDateString() : ''
+})
+
+// ------------------- METHOD DEFINITIONS --------------------
+// Core business logic - AI ASSISTANTS DO NOT MODIFY
+const fetchData = async () => {
+  isLoading.value = true
+  try {
+    // Implementation managed by development team
+    // Data fetching logic here
+    isLoading.value = false
+  } catch (error) {
+    errorMessage.value = 'Failed to fetch data'
+    isLoading.value = false
+  }
 }
 
-interface Doctor {
-  id: string;
-  name: string;
-  specialization: string;
-  patients: {
-    patient_id: string;
-    diagnosis: string;
-    last_visit: string;
-  }[];
+// Form handling methods
+const validateForm = () => {
+  // Validation logic managed by development team
+  return true
 }
 
-interface TopSpecialization {
-  name: string;
-  count: number;
-  percentage: number;
+const handleSubmit = () => {
+  if (validateForm()) {
+    // Submit logic managed by development team
+  }
 }
 
-interface HospitalStats {
-  totalPatients: number;
-  totalDoctors: number;
-  activeAppointments: number;
-  admittedPatients: number;
+const resetForm = () => {
+  // Reset logic managed by development team
 }
 
-interface DoctorExpertise {
-  id: string;
-  name: string;
-  specialization: string;
-  patient_count: number;
-  expertise: string[];
-}
+// ----------------- LIFECYCLE HOOKS SECTION -----------------
+// Component lifecycle management
+onMounted(async () => {
+  // Implementation managed by development team
+  await fetchData()
+})
 
-// Table column definitions
+// Watch for changes in reactive state
+watch([page, perPage, sortBy, sortDirection], async () => {
+  // Reload data when pagination or sorting changes
+  await fetchData()
+})
+
+// ------------------ ADDITIONAL STATE VARIABLES ------------------
+// Data for tables
+const topPatientsByAge = ref<any[]>([]);
+const youngestPatientsWithDisease = ref<any[]>([]);
+const doctorsExpertise = ref<any[]>([]);
+const selectedDisease = ref('Diabetes');
+const averageAge = ref(0);
+const maleCount = ref(0);
+const femaleCount = ref(0);
+const mostCommonDisease = ref('');
+const mostCommonDiseaseCount = ref(0);
+
+// New variables for doctor specialization analysis
+const topSpecializations = ref<{name: string, count: number, percentage: number}[]>([]);
+const totalDoctors = ref(0);
+
+// Hospital statistics
+const hospitalStats = ref({
+  totalPatients: 200,
+  totalDoctors: 150,
+  activeAppointments: 35,
+  admittedPatients: 28
+});
+
+// Table columns configuration
 const patientAgeColumns = [
   { key: 'name', label: 'Patient Name' },
   { key: 'age', label: 'Age' },
@@ -84,37 +125,6 @@ const doctorColumns = [
   { key: 'expertise', label: 'Disease Expertise' },
 ];
 
-// API service
-const api = useApi();
-
-// Core reactive state
-const isLoading = ref<boolean>(false);
-const errorMessage = ref<string>('');
-const userData = ref<User | null>(null);
-const page = ref<number>(1);
-const perPage = ref<number>(10);
-const sortBy = ref<string>('id');
-const sortDirection = ref<'asc' | 'desc'>('asc');
-
-// Dashboard state variables
-const topPatientsByAge = ref<any[]>([]);
-const youngestPatientsWithDisease = ref<any[]>([]);
-const doctorsExpertise = ref<DoctorExpertise[]>([]);
-const selectedDisease = ref<string>('Diabetes');
-const averageAge = ref<number>(0);
-const maleCount = ref<number>(0);
-const femaleCount = ref<number>(0);
-const mostCommonDisease = ref<string>('');
-const mostCommonDiseaseCount = ref<number>(0);
-const topSpecializations = ref<TopSpecialization[]>([]);
-const totalDoctors = ref<number>(0);
-const hospitalStats = ref<HospitalStats>({
-  totalPatients: 200,
-  totalDoctors: 150,
-  activeAppointments: 35,
-  admittedPatients: 28
-});
-
 // Disease options for dropdown
 const diseaseOptions = [
   'Diabetes',
@@ -134,22 +144,15 @@ const diseaseOptions = [
   'Osteoporosis'
 ];
 
-// Computed properties
-const isAdmin = computed((): boolean => userData.value?.role === 'admin');
-const canEdit = computed((): boolean => isAdmin.value || userData.value?.id === 1);
-const formattedDate = computed((): string => {
-  return userData.value?.createdAt ? new Date(userData.value.createdAt).toLocaleDateString() : '';
-});
-
-// Utility functions
-const getAgeColor = (age: number): string => {
+// ------------------- UTILITY FUNCTIONS --------------------
+const getAgeColor = (age: number) => {
   if (age > 70) return 'red';
   if (age > 50) return 'orange';
   if (age > 30) return 'blue';
   return 'green';
 };
 
-const getTreatmentColor = (treatment: string): string => {
+const getTreatmentColor = (treatment: string) => {
   const treatments: Record<string, string> = {
     'Medication': 'blue',
     'Surgery': 'red',
@@ -166,13 +169,13 @@ const getTreatmentColor = (treatment: string): string => {
   return treatments[treatment] || 'gray';
 };
 
-const getRandomColor = (seed: string): string => {
+const getRandomColor = (seed: string) => {
   const colors = ['blue', 'green', 'yellow', 'red', 'purple', 'pink', 'indigo', 'teal', 'orange', 'gray'];
   const index = seed.charCodeAt(0) % colors.length;
   return colors[index];
 };
 
-const formatDate = (dateString: string): string => {
+const formatDate = (dateString: string) => {
   if (!dateString) return 'N/A';
   try {
     const date = new Date(dateString);
@@ -182,80 +185,73 @@ const formatDate = (dateString: string): string => {
   }
 };
 
-// Data fetching functions
-const refreshData = async (): Promise<void> => {
+// ------------------- DATA FETCHING FUNCTIONS --------------------
+const refreshData = async () => {
   isLoading.value = true;
-  try {
-    await Promise.all([
-      fetchTopPatientsByAge(),
-      fetchYoungestPatientsWithDisease(),
-      fetchDoctorsExpertise(),
-      calculateAverageAge(),
-      calculateGenderDistribution(),
-      findMostCommonDisease(),
-      fetchTopSpecializations()
-    ]);
-  } catch (error) {
-    console.error('Error refreshing data:', error);
-    errorMessage.value = 'Failed to refresh data';
-  } finally {
-    isLoading.value = false;
-  }
+  await Promise.all([
+    fetchTopPatientsByAge(),
+    fetchYoungestPatientsWithDisease(),
+    fetchDoctorsExpertise(),
+    calculateAverageAge(),
+    calculateGenderDistribution(),
+    findMostCommonDisease(),
+    fetchTopSpecializations()
+  ]);
+  isLoading.value = false;
 };
 
-const refreshTopPatientsByAge = async (): Promise<void> => {
+// Refresh top patients by age - Adding missing function
+const refreshTopPatientsByAge = async () => {
   isLoading.value = true;
-  try {
-    await fetchTopPatientsByAge();
-  } catch (error) {
-    console.error('Error refreshing patient age data:', error);
-    errorMessage.value = 'Failed to refresh patient age data';
-  } finally {
-    isLoading.value = false;
-  }
+  await fetchTopPatientsByAge();
+  isLoading.value = false;
 };
 
-const fetchTopPatientsByAge = async (): Promise<void> => {
+// Fetch top 5 patients by age (oldest)
+const fetchTopPatientsByAge = async () => {
   try {
-    // Use API composable with caching
-    const patients = await api.get<Patient[]>('/patients/');
+    // In a real implementation, this would be an API call
+    // For demonstration, we'll simulate the data
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
 
     // Sort patients by age in descending order and take top 5
     topPatientsByAge.value = patients
-      .sort((a: Patient, b: Patient) => b.age - a.age)
+      .sort((a: any, b: any) => b.age - a.age)
       .slice(0, 5)
-      .map((patient: Patient) => ({
+      .map((patient: any) => ({
         id: patient.id,
         name: patient.name,
         age: patient.age,
         gender: patient.gender
       }));
   } catch (error) {
-    console.error('Failed to fetch top patients by age:', error);
     errorMessage.value = 'Failed to fetch top patients by age';
+    console.error(error);
   }
 };
 
-const fetchYoungestPatientsWithDisease = async (): Promise<void> => {
+// Fetch youngest patients with selected disease
+const fetchYoungestPatientsWithDisease = async () => {
   try {
-    // Use API composable with caching
-    const patients = await api.get<Patient[]>('/patients/');
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
 
     // Filter patients with the selected disease
-    const patientsWithDisease = patients.filter((patient: Patient) => {
-      return patient.medical_history.some((history: MedicalHistory) =>
+    const patientsWithDisease = patients.filter((patient: any) => {
+      return patient.medical_history.some((history: any) =>
         history.disease === selectedDisease.value
       );
     });
 
     // Sort by age ascending and take top 5
     youngestPatientsWithDisease.value = patientsWithDisease
-      .sort((a: Patient, b: Patient) => a.age - b.age)
+      .sort((a: any, b: any) => a.age - b.age)
       .slice(0, 5)
-      .map((patient: Patient) => {
+      .map((patient: any) => {
         // Find the relevant medical history entry
         const historyEntry = patient.medical_history.find(
-          (history: MedicalHistory) => history.disease === selectedDisease.value
+          (history: any) => history.disease === selectedDisease.value
         );
 
         return {
@@ -267,27 +263,28 @@ const fetchYoungestPatientsWithDisease = async (): Promise<void> => {
         };
       });
   } catch (error) {
-    console.error('Failed to fetch youngest patients with disease:', error);
     errorMessage.value = 'Failed to fetch youngest patients with disease';
+    console.error(error);
   }
 };
 
-const fetchDoctorsExpertise = async (): Promise<void> => {
+// Fetch doctors with most expertise
+const fetchDoctorsExpertise = async () => {
   try {
-    // Use API composable with caching
-    const doctors = await api.get<Doctor[]>('/doctors/');
+    const response = await fetch('http://127.0.0.1:8000/doctors/');
+    const doctors = await response.json();
 
     // Sort doctors by number of patients (descending)
     doctorsExpertise.value = doctors
-      .filter((doctor: Doctor) => doctor.patients && doctor.patients.length > 0)
-      .sort((a: Doctor, b: Doctor) =>
+      .filter((doctor: any) => doctor.patients && doctor.patients.length > 0)
+      .sort((a: any, b: any) =>
         (b.patients?.length || 0) - (a.patients?.length || 0)
       )
       .slice(0, 8)
-      .map((doctor: Doctor) => {
+      .map((doctor: any) => {
         // Extract unique diseases the doctor treats
-        const expertiseSet = new Set<string>();
-        doctor.patients?.forEach((patient) => {
+        const expertiseSet = new Set();
+        doctor.patients?.forEach((patient: any) => {
           if (patient.diagnosis) {
             expertiseSet.add(patient.diagnosis);
           }
@@ -302,47 +299,48 @@ const fetchDoctorsExpertise = async (): Promise<void> => {
         };
       });
   } catch (error) {
-    console.error('Failed to fetch doctors expertise:', error);
     errorMessage.value = 'Failed to fetch doctors expertise';
+    console.error(error);
   }
 };
 
-const calculateAverageAge = async (): Promise<void> => {
+// Calculate average age of all patients
+const calculateAverageAge = async () => {
   try {
-    // Use API composable with caching
-    const patients = await api.get<Patient[]>('/patients/');
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
 
-    const totalAge = patients.reduce((sum: number, patient: Patient) => sum + patient.age, 0);
+    const totalAge = patients.reduce((sum: number, patient: any) => sum + patient.age, 0);
     averageAge.value = Math.round(totalAge / patients.length);
   } catch (error) {
-    console.error('Failed to calculate average age:', error);
-    errorMessage.value = 'Failed to calculate average age';
+    console.error('Failed to calculate average age', error);
   }
 };
 
-const calculateGenderDistribution = async (): Promise<void> => {
+// Calculate gender distribution
+const calculateGenderDistribution = async () => {
   try {
-    // Use API composable with caching
-    const patients = await api.get<Patient[]>('/patients/');
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
 
-    maleCount.value = patients.filter((p: Patient) => p.gender === 'Male').length;
-    femaleCount.value = patients.filter((p: Patient) => p.gender === 'Female').length;
+    maleCount.value = patients.filter((p: any) => p.gender === 'Male').length;
+    femaleCount.value = patients.filter((p: any) => p.gender === 'Female').length;
   } catch (error) {
-    console.error('Failed to calculate gender distribution:', error);
-    errorMessage.value = 'Failed to calculate gender distribution';
+    console.error('Failed to calculate gender distribution', error);
   }
 };
 
-const findMostCommonDisease = async (): Promise<void> => {
+// Find most common disease
+const findMostCommonDisease = async () => {
   try {
-    // Use API composable with caching
-    const patients = await api.get<Patient[]>('/patients/');
+    const response = await fetch('http://127.0.0.1:8000/patients/');
+    const patients = await response.json();
 
     // Count occurrences of each disease
     const diseaseCounts: Record<string, number> = {};
 
-    patients.forEach((patient: Patient) => {
-      patient.medical_history.forEach((history: MedicalHistory) => {
+    patients.forEach((patient: any) => {
+      patient.medical_history.forEach((history: any) => {
         const disease = history.disease;
         diseaseCounts[disease] = (diseaseCounts[disease] || 0) + 1;
       });
@@ -362,22 +360,22 @@ const findMostCommonDisease = async (): Promise<void> => {
     mostCommonDisease.value = maxDisease;
     mostCommonDiseaseCount.value = maxCount;
   } catch (error) {
-    console.error('Failed to find most common disease:', error);
-    errorMessage.value = 'Failed to find most common disease';
+    console.error('Failed to find most common disease', error);
   }
 };
 
-const fetchTopSpecializations = async (): Promise<void> => {
+// Fetch top 3 doctor specializations with percentages
+const fetchTopSpecializations = async () => {
   try {
-    // Use API composable with caching
-    const doctors = await api.get<Doctor[]>('/doctors/');
+    const response = await fetch('http://127.0.0.1:8000/doctors/');
+    const doctors = await response.json();
 
     totalDoctors.value = doctors.length;
 
     // Count occurrences of each specialization
     const specializationCounts: Record<string, number> = {};
 
-    doctors.forEach((doctor: Doctor) => {
+    doctors.forEach((doctor: any) => {
       const specialization = doctor.specialization;
       specializationCounts[specialization] = (specializationCounts[specialization] || 0) + 1;
     });
@@ -393,42 +391,14 @@ const fetchTopSpecializations = async (): Promise<void> => {
 
     // Get top 3 specializations
     topSpecializations.value = sortedSpecializations.slice(0, 3);
+
   } catch (error) {
-    console.error('Failed to fetch doctor specializations:', error);
     errorMessage.value = 'Failed to fetch doctor specializations';
+    console.error(error);
   }
 };
 
-// Core business logic placeholder
-const fetchData = async (): Promise<void> => {
-  isLoading.value = true;
-  try {
-    // Implementation managed by development team
-    // Data fetching logic here
-    isLoading.value = false;
-  } catch (error) {
-    errorMessage.value = 'Failed to fetch data';
-    isLoading.value = false;
-  }
-};
-
-// Form handling methods
-const validateForm = (): boolean => {
-  // Validation logic managed by development team
-  return true;
-};
-
-const handleSubmit = (): void => {
-  if (validateForm()) {
-    // Submit logic managed by development team
-  }
-};
-
-const resetForm = (): void => {
-  // Reset logic managed by development team
-};
-
-// Lifecycle hooks
+// ------------------- LIFECYCLE HOOKS --------------------
 onMounted(async () => {
   await refreshData();
 });
@@ -436,19 +406,8 @@ onMounted(async () => {
 // Watch for changes in selected disease
 watch(selectedDisease, async () => {
   isLoading.value = true;
-  try {
-    await fetchYoungestPatientsWithDisease();
-  } catch (error) {
-    console.error('Error updating disease data:', error);
-  } finally {
-    isLoading.value = false;
-  }
-});
-
-// Watch for changes in reactive state
-watch([page, perPage, sortBy, sortDirection], async () => {
-  // Reload data when pagination or sorting changes
-  await fetchData();
+  await fetchYoungestPatientsWithDisease();
+  isLoading.value = false;
 });
 </script>
 

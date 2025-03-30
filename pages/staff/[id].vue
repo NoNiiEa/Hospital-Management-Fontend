@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -84,8 +83,12 @@ const fetchStaffData = async () => {
   error.value = null;
 
   try {
-    const response = await axios.get(`http://127.0.0.1:8000/staffs/get/${route.params.id}`);
-    staff.value = response.data;
+    const response = await fetch(`http://127.0.0.1:8000/staffs/get/${route.params.id}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch staff data: ${response.statusText}`);
+    }
+
+    staff.value = await response.json();
 
     // If the API doesn't provide these fields, initialize them for display
     if (!staff.value.performance_reviews) {
@@ -125,18 +128,24 @@ const confirmDelete = async () => {
 
   if (confirm('Are you sure you want to delete this staff member? This action cannot be undone.')) {
     try {
-      const response = await axios.delete(`http://127.0.0.1:8000/staffs/delete/${staff.value.id}`, {
+      const response = await fetch(`http://127.0.0.1:8000/staffs/delete/${staff.value.id}`, {
+        method: 'DELETE',
         headers: {
           'accept': 'application/json'
         }
       });
 
-      alert('Staff member deleted successfully');
-      sessionStorage.setItem('needsRefresh', 'true');
-      router.push('/admin');
-    } catch (err: any) {
+      if (response.ok) {
+        alert('Staff member deleted successfully');
+        sessionStorage.setItem('needsRefresh', 'true');
+        router.push('/admin');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete staff member');
+      }
+    } catch (err) {
       console.error('Error deleting staff:', err);
-      alert(err.response?.data?.detail || 'Failed to delete staff member');
+      alert(err instanceof Error ? err.message : 'Failed to delete staff member');
     }
   }
 };

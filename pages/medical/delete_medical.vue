@@ -18,38 +18,43 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import axios from 'axios';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+<script>
+export default {
+  data() {
+    return {
+      medicalId: ''
+    }
+  },
+  methods: {
+    async deleteMedical() {
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/doctors/delete/${this.medicalId}`, {
+          method: 'DELETE',
+          headers: {
+            'accept': 'application/json'
+          }
+        });
 
-const medicalId = ref('');
-const router = useRouter();
-
-const deleteMedical = async (): Promise<void> => {
-  try {
-    const response = await axios.delete(`http://127.0.0.1:8000/doctors/delete/${medicalId.value}`, {
-      headers: {
-        'accept': 'application/json'
+        if (response.ok) {
+          alert('Medical personnel deleted successfully!')
+          this.$router.push('/admin')
+          // Add refresh after navigation
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        } else {
+          alert('Failed to delete medical personnel')
+        }
+      } catch (error) {
+        console.error('Error:', error)
+        alert('Error deleting medical personnel')
       }
-    });
-
-    alert('Medical personnel deleted successfully!');
-    router.push('/admin');
-
-    // Add refresh after navigation
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error deleting medical personnel');
+    },
+    goBack() {
+      this.$router.push('/admin')
+    }
   }
-};
-
-const goBack = (): void => {
-  router.push('/admin');
-};
+}
 </script>
 
 <style scoped>

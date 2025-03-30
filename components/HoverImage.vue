@@ -1,49 +1,52 @@
 <template>
-  <div class="relative">
-    <img
-      :src="smallImage"
-      :alt="altText"
-      @mouseover="showLargeImage"
-      @mouseout="hideLargeImage"
-      class="transition-all duration-300"
-    />
-    <img
-      v-if="isHovered"
-      :src="largeImage"
-      :alt="altText"
-      class="absolute top-0 left-0 w-[200%] h-[200%] z-10"
-    />
+  <div class="hover-image">
+    <img :src="smallImage" :alt="altText" @mouseover="showLargeImage" @mouseout="hideLargeImage" />
+    <img v-if="isHovered" :src="largeImage" :alt="altText" class="large-image" />
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-
-// Props
-const props = defineProps({
-  smallImage: {
-    type: String as () => string,
-    required: true,
+<script>
+export default {
+  props: {
+    smallImage: {
+      type: String,
+      required: true,
+    },
+    largeImage: {
+      type: String,
+      required: true,
+    },
+    altText: {
+      type: String,
+      required: true,
+    },
   },
-  largeImage: {
-    type: String as () => string,
-    required: true,
+  data() {
+    return {
+      isHovered: false,
+    };
   },
-  altText: {
-    type: String as () => string,
-    required: true,
+  methods: {
+    showLargeImage() {
+      this.isHovered = true;
+    },
+    hideLargeImage() {
+      this.isHovered = false;
+    },
   },
-});
-
-// State
-const isHovered = ref<boolean>(false);
-
-// Methods
-const showLargeImage = (): void => {
-  isHovered.value = true;
-};
-
-const hideLargeImage = (): void => {
-  isHovered.value = false;
 };
 </script>
+
+<style scoped>
+.hover-image {
+  position: relative;
+}
+.large-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 200%;
+  z-index: 10;
+}
+</style>

@@ -18,36 +18,41 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import axios from 'axios';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+<script>
+export default {
+  data() {
+    return {
+      patientId: ''
+    }
+  },
+  methods: {
+    async deletePatient() {
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/patients/delete/${this.patientId}`, {
+          method: 'DELETE',
+          headers: {
+            'accept': 'application/json'
+          }
+        });
 
-const patientId = ref('');
-const router = useRouter();
-
-const deletePatient = async (): Promise<void> => {
-  try {
-    const response = await axios.delete(`http://127.0.0.1:8000/patients/delete/${patientId.value}`, {
-      headers: {
-        'accept': 'application/json'
+        if (response.ok) {
+          alert('Patient deleted successfully!')
+          this.$router.push('/admin')
+          // Add refresh after navigation
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        } else {
+          alert('Failed to delete patient')
+        }
+      } catch (error) {
+        console.error('Error deleting patient:', error)
+        alert('Error deleting patient')
       }
-    });
-
-    alert('Patient deleted successfully!');
-    router.push('/admin');
-
-    // Add refresh after navigation
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
-  } catch (error) {
-    console.error('Error deleting patient:', error);
-    alert('Error deleting patient');
+    }
   }
-};
+}
 </script>
-
 <style scoped>
 .delete-patient-container {
   max-width: 600px;
@@ -57,25 +62,30 @@ const deletePatient = async (): Promise<void> => {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 h2 {
   color: #dc2626;
   text-align: center;
   margin-bottom: 2rem;
 }
+
 .form-group {
   margin-bottom: 1rem;
 }
+
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: bold;
 }
+
 .form-group input {
   width: 100%;
   padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
+
 .confirmation-message {
   text-align: center;
   color: #dc2626;
@@ -84,12 +94,14 @@ h2 {
   border-radius: 4px;
   margin: 1rem 0;
 }
+
 .button-group {
   display: flex;
   gap: 1rem;
   justify-content: center;
   margin-top: 2rem;
 }
+
 .delete-btn,
 .cancel-btn {
   padding: 0.5rem 1rem;
@@ -98,17 +110,21 @@ h2 {
   cursor: pointer;
   font-weight: bold;
 }
+
 .delete-btn {
   background: #dc2626;
   color: white;
 }
+
 .delete-btn:hover {
   background: #b91c1c;
 }
+
 .cancel-btn {
   background: #9ca3af;
   color: white;
 }
+
 .cancel-btn:hover {
   background: #6b7280;
 }
