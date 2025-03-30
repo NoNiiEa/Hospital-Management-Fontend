@@ -1,164 +1,40 @@
 <!-- @format -->
 
-<template lang="html">
-  <div class="admin-profile h-full">
+<template>
+  <div class="max-w-md mx-auto my-8 p-8 rounded-2xl bg-white shadow-md flex flex-col gap-8">
     <!-- Profile -->
-    <div class="profile-card">
-      <div class="profile-image-container">
-        <img src="@/assets/Images/inwnot.png" alt="Admin Profile Image" class="profile-image" />
+    <div class="flex flex-col items-center p-4">
+      <div
+        class="relative w-28 h-28 mb-4 rounded-full overflow-hidden shadow-sm hover:scale-105 transition-transform duration-300">
+        <img src="@/assets/Images/inwnot.png" alt="Admin Profile Image" class="w-full h-full object-cover" />
       </div>
-      <div class="profile-details">
+      <div class="flex flex-col items-center text-center">
         <!-- name -->
-        <h3 class="profile-name">นาย น็อต เทพน็อต</h3>
+        <h3 class="text-2xl font-semibold mt-2 mb-1 text-gray-800">นาย น็อต เทพน็อต</h3>
         <!-- role -->
-        <p class="profile-role">Admin ประจำโรงบาล</p>
+        <p class="text-sm text-gray-500">Admin ประจำโรงบาล</p>
       </div>
     </div>
-
-    <div class="features-section">
+    <div class="flex flex-col items-center gap-4 w-full">
       <!-- Features text -->
-      <p class="features-title">Features</p>
+      <p class="text-lg font-semibold text-gray-800">Features</p>
       <!-- DashBoard button-->
-      <button class="feature-button dashboard-btn">
+      <button
+        class="w-64 py-3 px-4 rounded-lg text-base font-semibold text-center text-white bg-blue-500 hover:bg-blue-600 transition-colors duration-300">
         Dashboard
       </button>
     </div>
-
     <!-- log-out zone -->
-    <div class="logout-section">
-      <button class="feature-button logout-btn">
+    <div class="flex justify-center">
+      <button
+        class="w-64 py-3 px-4 rounded-lg text-base font-semibold text-center text-white bg-red-500 hover:bg-red-600 transition-colors duration-300">
         Logout
       </button>
     </div>
   </div>
 </template>
 
-<script>
-export default {};
+<script setup>
+// No state or methods needed for this component yet
+// Can add authentication logic here when needed
 </script>
-
-<style lang="css">
-.admin-profile
-{
-  max-width: 400px;
-  margin: 2rem auto;
-  padding: 2rem;
-  border-radius: 16px;
-  background-color: #ffffff;
-  box-shadow: rgba(149, 157, 165, 0.1) 0px 8px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.profile-card
-{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem 0;
-}
-
-.profile-image-container
-{
-  position: relative;
-  width: 110px;
-  height: 110px;
-  margin-bottom: 1rem;
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow: rgba(17, 12, 46, 0.08) 0px 4px 16px 0px;
-  transition: transform 0.3s ease;
-}
-
-.profile-image-container:hover
-{
-  transform: scale(1.05);
-}
-
-.profile-image
-{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.profile-details
-{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.profile-name
-{
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0.5rem 0 0.2rem;
-  color: #2d3748;
-}
-
-.profile-role
-{
-  font-size: 0.9rem;
-  color: #718096;
-  margin: 0;
-}
-
-.features-section
-{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-}
-
-.features-title
-{
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.feature-button
-{
-  width: 250px;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.dashboard-btn
-{
-  background-color: #4299e1;
-  color: #ffffff;
-}
-
-.dashboard-btn:hover
-{
-  background-color: #3182ce;
-}
-
-.logout-btn
-{
-  background-color: #f56565;
-  color: #ffffff;
-}
-
-.logout-btn:hover
-{
-  background-color: #e03;
-}
-
-.logout-section
-{
-  display: flex;
-  justify-content: center;
-}
-</style>

@@ -1,44 +1,41 @@
-<template lang="html">
-  <div>
+<template>
+  <div class="p-4">
     <!-- Dashboard header with search -->
-    <div class="dashboard-header">
-      <h1 class="text-Dashboard">Dashboard</h1>
-      <div class="search-container">
-        <div class="search-box">
-          <form class="max-w-md mx-auto">
-            <label for="default-search"
-              class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                </svg>
-              </div>
-              <input type="search" id="default-search" v-model="search_input"
-                class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-white-700 dark:border-white-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="Search Name, Role or Shift" required />
+    <div class="flex items-center justify-between px-2 my-10">
+      <h1 class="text-4xl font-bold text-blue-900">Dashboard</h1>
+      <div class="flex-1 max-w-md ml-50">
+        <form class="mx-auto">
+          <div class="relative">
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+              </svg>
             </div>
-          </form>
-        </div>
+            <input type="search" id="default-search" v-model="searchInput"
+              class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 transition-transform hover:translate-y-[-2px] hover:shadow-md focus:translate-y-[-2px] focus:shadow-lg"
+              placeholder="Search Name, Role or Shift" required />
+          </div>
+        </form>
       </div>
     </div>
 
-    <!-- Recent History -->
-    <div class="space">
-      <div class="history-dashboard">
-        <!-- Recent History left - Patients -->
-        <div class="left">
-          <div class="button-add-delete">
-            <h3 class="head-card">Patients</h3>
-            <!-- icon add patient -->
-            <div class="add-delete-right">
-              <button v-on:click="addPatients" class="add-docter">
+    <!-- Main content area -->
+    <div class="px-[4%] py-[2%]">
+      <div class="flex justify-between bg-white rounded-lg">
+        <!-- Patients section -->
+        <div class="flex-1 mx-[2%] my-[10px]">
+          <div class="flex">
+            <h3 class="text-2xl font-semibold text-blue-900 mt-[3%] mb-[5%]">Patients</h3>
+            <!-- Add/Delete Buttons -->
+            <div class="ml-auto gap-2.5">
+              <button @click="addPatients"
+                class="px-5 py-1.5 mx-2.5 my-2.5 text-sm font-bold text-green-700 border-2 border-green-700 rounded-md hover:bg-green-700 hover:text-white transition-all">
                 Add
               </button>
-              <!-- icon delete paitnet -->
-              <button v-on:click="deletePatients" class="delete-docter">
+              <button @click="deletePatients"
+                class="px-3 py-1.5 text-sm font-bold text-red-700 border-2 border-red-700 rounded-md hover:bg-red-700 hover:text-white transition-all">
                 Delete
               </button>
             </div>
@@ -48,37 +45,34 @@
               <Card :name="patient.name" :id="patient.id" type="patient" @deleted="handleDeleted" />
             </li>
           </ul>
-          <!-- Add pagination controls -->
-          <div class="pagination">
-            <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)" class="pagination-btn">
+          <!-- Pagination for Patients -->
+          <div class="flex justify-center items-center mt-5 gap-5">
+            <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)"
+              class="px-4 py-2 text-sm font-medium text-white uppercase bg-blue-700 rounded-lg shadow-md disabled:bg-blue-300 disabled:cursor-not-allowed hover:shadow-lg hover:translate-y-[-2px] active:shadow-sm active:translate-y-[1px] transition-all">
               Previous
             </button>
-            <span class="page-info">
+            <span class="text-sm font-medium">
               Page {{ currentPage }} of {{ totalPatientPages }}
             </span>
             <button :disabled="currentPage === totalPatientPages" @click="changePage(currentPage + 1)"
-              class="pagination-btn">
+              class="px-4 py-2 text-sm font-medium text-white uppercase bg-blue-700 rounded-lg shadow-md disabled:bg-blue-300 disabled:cursor-not-allowed hover:shadow-lg hover:translate-y-[-2px] active:shadow-sm active:translate-y-[1px] transition-all">
               Next
             </button>
           </div>
         </div>
 
-        <!-- Where you display patients -->
-        <div v-for="patient in filteredPatients" :key="patient.id">
-          <!-- patient display content -->
-        </div>
-
-        <!-- Recent History right - Medical Personnel -->
-        <div class="right">
-          <div class="button-add-delete">
-            <h3 class="head-card">Medical Personnels</h3>
-            <!-- icon add medical personnel -->
-            <div class="add-delete-right">
-              <button v-on:click="addMedicalPersonnel" class="add-docter">
+        <!-- Medical Personnel section -->
+        <div class="flex-1 mx-[2%] my-[10px]">
+          <div class="flex">
+            <h3 class="text-2xl font-semibold text-blue-900 mt-[3%] mb-[5%]">Medical Personnels</h3>
+            <!-- Add/Delete Buttons -->
+            <div class="ml-auto gap-2.5">
+              <button @click="addMedicalPersonnel"
+                class="px-5 py-1.5 mx-2.5 my-2.5 text-sm font-bold text-green-700 border-2 border-green-700 rounded-md hover:bg-green-700 hover:text-white transition-all">
                 Add
               </button>
-              <!-- icon delete medical personnel -->
-              <button v-on:click="deleteMedicalPersonnel" class="delete-docter">
+              <button @click="deleteMedicalPersonnel"
+                class="px-3 py-1.5 text-sm font-bold text-red-700 border-2 border-red-700 rounded-md hover:bg-red-700 hover:text-white transition-all">
                 Delete
               </button>
             </div>
@@ -88,38 +82,34 @@
               <Card :name="person.name" :id="person.id" type="doctor" @deleted="handleDeleted" />
             </li>
           </ul>
-          <!-- New pagination controls for Medical Personnel -->
-          <div class="pagination">
+          <!-- Pagination for Medical Personnel -->
+          <div class="flex justify-center items-center mt-5 gap-5">
             <button :disabled="currentDoctorPage === 1" @click="changeDoctorPage(currentDoctorPage - 1)"
-              class="pagination-btn">
+              class="px-4 py-2 text-sm font-medium text-white uppercase bg-blue-700 rounded-lg shadow-md disabled:bg-blue-300 disabled:cursor-not-allowed hover:shadow-lg hover:translate-y-[-2px] active:shadow-sm active:translate-y-[1px] transition-all">
               Previous
             </button>
-            <span class="page-info">
+            <span class="text-sm font-medium">
               Page {{ currentDoctorPage }} of {{ totalDoctorPages }}
             </span>
             <button :disabled="currentDoctorPage === totalDoctorPages" @click="changeDoctorPage(currentDoctorPage + 1)"
-              class="pagination-btn">
+              class="px-4 py-2 text-sm font-medium text-white uppercase bg-blue-700 rounded-lg shadow-md disabled:bg-blue-300 disabled:cursor-not-allowed hover:shadow-lg hover:translate-y-[-2px] active:shadow-sm active:translate-y-[1px] transition-all">
               Next
             </button>
           </div>
         </div>
 
-        <!-- Where you display medical personnel -->
-        <div v-for="person in filteredMedicalPersonnel" :key="person.id">
-          <!-- medical personnel display content -->
-        </div>
-
-        <!-- Recent History right - Staff -->
-        <div class="right">
-          <div class="button-add-delete">
-            <h3 class="head-card">Staff</h3>
-            <!-- icon add staff -->
-            <div class="add-delete-right">
-              <button v-on:click="addStaff" class="add-docter">
+        <!-- Staff section -->
+        <div class="flex-1 mx-[2%] my-[10px]">
+          <div class="flex">
+            <h3 class="text-2xl font-semibold text-blue-900 mt-[3%] mb-[5%]">Staff</h3>
+            <!-- Add/Delete Buttons -->
+            <div class="ml-auto gap-2.5">
+              <button @click="addStaff"
+                class="px-5 py-1.5 mx-2.5 my-2.5 text-sm font-bold text-green-700 border-2 border-green-700 rounded-md hover:bg-green-700 hover:text-white transition-all">
                 Add
               </button>
-              <!-- icon delete staff -->
-              <button v-on:click="deleteStaff" class="delete-docter">
+              <button @click="deleteStaff"
+                class="px-3 py-1.5 text-sm font-bold text-red-700 border-2 border-red-700 rounded-md hover:bg-red-700 hover:text-white transition-all">
                 Delete
               </button>
             </div>
@@ -129,576 +119,251 @@
               <Card :name="staff.name" :id="staff.id" type="staff" @deleted="handleDeleted" />
             </li>
           </ul>
-          <!-- New pagination controls for Staff -->
-          <div class="pagination">
-            <button :disabled="currentStaffPage === 1" @click="changeStaffPage(currentStaffPage - 1)" class="pagination-btn">
+          <!-- Pagination for Staff -->
+          <div class="flex justify-center items-center mt-5 gap-5">
+            <button :disabled="currentStaffPage === 1" @click="changeStaffPage(currentStaffPage - 1)"
+              class="px-4 py-2 text-sm font-medium text-white uppercase bg-blue-700 rounded-lg shadow-md disabled:bg-blue-300 disabled:cursor-not-allowed hover:shadow-lg hover:translate-y-[-2px] active:shadow-sm active:translate-y-[1px] transition-all">
               Previous
             </button>
-            <span class="page-info">
+            <span class="text-sm font-medium">
               Page {{ currentStaffPage }} of {{ totalStaffPages }}
             </span>
-            <button :disabled="currentStaffPage === totalStaffPages" @click="changeStaffPage(currentStaffPage + 1)" class="pagination-btn">
+            <button :disabled="currentStaffPage === totalStaffPages" @click="changeStaffPage(currentStaffPage + 1)"
+              class="px-4 py-2 text-sm font-medium text-white uppercase bg-blue-700 rounded-lg shadow-md disabled:bg-blue-300 disabled:cursor-not-allowed hover:shadow-lg hover:translate-y-[-2px] active:shadow-sm active:translate-y-[1px] transition-all">
               Next
             </button>
           </div>
-        </div>
-
-        <!-- Where you display staff -->
-        <div v-for="staff in filteredStaff" :key="staff.id">
-          <!-- staff display content -->
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import axios from "axios";
-import { useRouter } from "vue-router";
-import Card from "../Card.vue";
+<script setup>
+import axios from 'axios';
+import { useRouter } from 'nuxt/app';
+import { computed, onMounted, ref, watch } from 'vue';
 
-class Patient {
-  constructor(id, name) {
-    this.id = id;
-    this.name = name;
+// Setup router
+const router = useRouter();
+
+// Define model classes (converted to factory functions)
+const createPatient = (id, name) => ({ id, name });
+const createMedicalPersonnel = (id, name) => ({ id, name });
+const createStaff = (id, name, role, contact, shift) => ({ id, name, role, contact, shift });
+
+// State variables
+const searchInput = ref('');
+const allPatients = ref([]);
+const allMedicalPersonnel = ref([]);
+const allStaff = ref([]);
+const patients = ref([]);
+const medicalPersonnel = ref([]);
+const staffMembers = ref([]);
+
+// Pagination state
+const currentPage = ref(1);
+const totalPatientPages = ref(10);
+const itemsPerPage = ref(10);
+
+const currentDoctorPage = ref(1);
+const totalDoctorPages = ref(10);
+const itemsPerDoctorPage = ref(10);
+
+const currentStaffPage = ref(1);
+const totalStaffPages = ref(10);
+const itemsPerStaffPage = ref(10);
+
+// Computed properties
+const filteredPatients = computed(() => {
+  if (!searchInput.value || !allPatients.value) return allPatients.value || [];
+
+  return allPatients.value.filter(patient =>
+    patient.name.toLowerCase().includes(searchInput.value.toLowerCase())
+  );
+});
+
+const filteredMedicalPersonnel = computed(() => {
+  if (!searchInput.value || !allMedicalPersonnel.value) return allMedicalPersonnel.value || [];
+
+  return allMedicalPersonnel.value.filter(person =>
+    person.name.toLowerCase().includes(searchInput.value.toLowerCase())
+  );
+});
+
+const filteredStaff = computed(() => {
+  if (!searchInput.value || !allStaff.value) return allStaff.value || [];
+
+  return allStaff.value.filter(staff =>
+    staff.name.toLowerCase().includes(searchInput.value.toLowerCase()) ||
+    staff.role.toLowerCase().includes(searchInput.value.toLowerCase()) ||
+    staff.shift.toLowerCase().includes(searchInput.value.toLowerCase())
+  );
+});
+
+// Methods
+const fetchPatients = async () => {
+  try {
+    const { data: patientData } = await axios.get("http://127.0.0.1:8000/patients/");
+    allPatients.value = patientData.map(
+      (patient) => createPatient(patient.id, patient.name)
+    );
+    totalPatientPages.value = Math.ceil(filteredPatients.value.length / itemsPerPage.value);
+    updateCurrentPagePatients();
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    allPatients.value = [];
+    patients.value = [];
+    totalPatientPages.value = 1;
   }
-}
-
-class MedicalPersonnel {
-  constructor(id, name) {
-    this.id = id;
-    this.name = name;
-  }
-}
-
-class Staff {
-  constructor(id, name, role, contact, shift) {
-    this.id = id;
-    this.name = name;
-    this.role = role;
-    this.contact = contact;
-    this.shift = shift;
-  }
-}
-
-const imagesize = "40px";
-export default {
-  components: {
-    Card,
-  },
-  setup() {
-    const router = useRouter();
-    return { router };
-  },
-  data() {
-    return {
-      // Add this new property to store all patients
-      allPatients: [],
-      // Add this new property to store all medical personnel
-      allMedicalPersonnel: [],
-      // Add this new property to store all staff
-      allStaff: [],
-      // Keep existing properties
-      patients: [],
-      medicalPersonnel: [],
-      staffMembers: [],
-      input: "",
-      imagesize,
-      currentPage: 1,
-      totalPatientPages: 10, // Changed from totalPages
-      itemsPerPage: 10,
-      // Doctor pagination
-      currentDoctorPage: 1,
-      totalDoctorPages: 10,
-      itemsPerDoctorPage: 10,
-      // Staff pagination
-      currentStaffPage: 1,
-      totalStaffPages: 10,
-      itemsPerStaffPage: 10,
-      search_input: ""
-    };
-  },
-  computed: {
-    // First filter all patients by search term
-    filteredPatients() {
-      if (!this.search_input || !this.allPatients) return this.allPatients || [];
-
-      return this.allPatients.filter(patient =>
-        patient.name.toLowerCase().includes(this.search_input.toLowerCase())
-      );
-    },
-
-    // Update the filteredMedicalPersonnel computed property
-    filteredMedicalPersonnel() {
-      if (!this.search_input || !this.allMedicalPersonnel) return this.allMedicalPersonnel || [];
-
-      return this.allMedicalPersonnel.filter(person =>
-        person.name.toLowerCase().includes(this.search_input.toLowerCase())
-      );
-    },
-
-    // Add the filteredStaff computed property
-    filteredStaff() {
-      if (!this.search_input || !this.allStaff) return this.allStaff || [];
-
-      return this.allStaff.filter(staff =>
-        staff.name.toLowerCase().includes(this.search_input.toLowerCase()) ||
-        staff.role.toLowerCase().includes(this.search_input.toLowerCase()) ||
-        staff.shift.toLowerCase().includes(this.search_input.toLowerCase())
-      );
-    }
-  },
-  methods: {
-
-    async fetchPatients() {
-      try {
-        // Fetch ALL patients at once
-        const { data: allPatients } = await axios.get("http://127.0.0.1:8000/patients/");
-
-        // Store all patients
-        this.allPatients = allPatients.map(
-          (patient) => new Patient(patient.id, patient.name)
-        );
-
-        // Update total pages based on all patients
-        this.totalPatientPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage);
-
-        // Update current page patients
-        this.updateCurrentPagePatients();
-      } catch (error) {
-        console.error("Error fetching patients:", error);
-        this.allPatients = [];
-        this.patients = [];
-        this.totalPatientPages = 1;
-      }
-    },
-
-    // Add this new method to update current page patients
-    updateCurrentPagePatients() {
-      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-      const endIndex = startIndex + this.itemsPerPage;
-      this.patients = this.filteredPatients.slice(startIndex, endIndex);
-    },
-
-    async changePage(newPage) {
-      // Calculate max pages based on filtered results
-      const maxPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage) || 1;
-
-      if (newPage >= 1 && newPage <= maxPages) {
-        this.currentPage = newPage;
-        this.updateCurrentPagePatients();
-      }
-    },
-
-
-    async fetchMedicalPersonnel() {
-      try {
-        // Fetch ALL doctors at once
-        const { data: allDoctors } = await axios.get("http://127.0.0.1:8000/doctors/");
-
-        // Store all doctors
-        this.allMedicalPersonnel = allDoctors.map(
-          (doctor) => new MedicalPersonnel(doctor.id, doctor.name)
-        );
-
-        // Update total pages based on all doctors
-        this.totalDoctorPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage);
-
-        // Update current page doctors
-        this.updateCurrentPageMedicalPersonnel();
-      } catch (error) {
-        console.error("Error fetching medical personnel:", error);
-        this.allMedicalPersonnel = [];
-        this.medicalPersonnel = [];
-        this.totalDoctorPages = 1;
-      }
-    },
-
-    // Add this new method for updating current page medical personnel
-    updateCurrentPageMedicalPersonnel() {
-      const startIndex = (this.currentDoctorPage - 1) * this.itemsPerDoctorPage;
-      const endIndex = startIndex + this.itemsPerDoctorPage;
-      this.medicalPersonnel = this.filteredMedicalPersonnel.slice(startIndex, endIndex);
-    },
-
-    async changeDoctorPage(newPage) {
-      // Calculate max pages based on filtered results
-      const maxPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage) || 1;
-
-      if (newPage >= 1 && newPage <= maxPages) {
-        this.currentDoctorPage = newPage;
-        this.updateCurrentPageMedicalPersonnel();
-      }
-    },
-
-    async fetchStaff() {
-      try {
-        const { data: allStaff } = await axios.get("http://127.0.0.1:8000/staffs/");
-        this.allStaff = allStaff.map(
-          (staff) => new Staff(staff.id, staff.name, staff.role, staff.contact, staff.shift)
-        );
-        this.totalStaffPages = Math.ceil(this.filteredStaff.length / this.itemsPerStaffPage);
-        this.updateCurrentPageStaff();
-      } catch (error) {
-        console.error("Error fetching staff:", error);
-        this.allStaff = [];
-        this.staffMembers = [];
-        this.totalStaffPages = 1;
-      }
-    },
-    updateCurrentPageStaff() {
-      const startIndex = (this.currentStaffPage - 1) * this.itemsPerStaffPage;
-      const endIndex = startIndex + this.itemsPerStaffPage;
-      this.staffMembers = this.filteredStaff.slice(startIndex, endIndex);
-    },
-    async changeStaffPage(newPage) {
-      const maxPages = Math.ceil(this.filteredStaff.length / this.itemsPerStaffPage) || 1;
-      if (newPage >= 1 && newPage <= maxPages) {
-        this.currentStaffPage = newPage;
-        this.updateCurrentPageStaff();
-      }
-    },
-    async addStaff() {
-      this.router.push("/staff/add_staff");
-    },
-    async deleteStaff() {
-      this.router.push("/staff/delete_staff");
-    },
-    async addPatients() {
-      this.router.push("/patient/add_patient");
-    },
-    async deletePatients() {
-      this.router.push("/patient/delete_patient");
-    },
-    async addMedicalPersonnel() {
-      this.router.push("/medical/add_medical");
-    },
-    async deleteMedicalPersonnel() {
-      this.router.push("/medical/delete_medical");
-    },
-    handleDeleted({ id, type }) {
-      if (type === "patient") {
-        // Remove from allPatients array
-        this.allPatients = this.allPatients.filter((patient) => patient.id !== id);
-        // Recalculate totalPatientPages and update current page
-        this.totalPatientPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage) || 1;
-        this.updateCurrentPagePatients();
-      } else if (type === "staff") {
-        this.allStaff = this.allStaff.filter((staff) => staff.id !== id);
-        this.totalStaffPages = Math.ceil(this.filteredStaff.length / this.itemsPerStaffPage) || 1;
-        this.updateCurrentPageStaff();
-      } else {
-        // Remove from allMedicalPersonnel array
-        this.allMedicalPersonnel = this.allMedicalPersonnel.filter((person) => person.id !== id);
-        // Recalculate totalDoctorPages and update current page
-        this.totalDoctorPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage) || 1;
-        this.updateCurrentPageMedicalPersonnel();
-      }
-    },
-    // Add this new method to navigate to staff details
-    goToStaffDetails(id) {
-      this.router.push(`/staff/${id}`);
-    },
-  },
-  watch: {
-    search_input() {
-      // Reset to first page for patients
-      this.currentPage = 1;
-      this.totalPatientPages = Math.ceil(this.filteredPatients.length / this.itemsPerPage) || 1;
-      this.updateCurrentPagePatients();
-
-      // Reset to first page for medical personnel
-      this.currentDoctorPage = 1;
-      this.totalDoctorPages = Math.ceil(this.filteredMedicalPersonnel.length / this.itemsPerDoctorPage) || 1;
-      this.updateCurrentPageMedicalPersonnel();
-
-      // Reset to first page for staff
-      this.currentStaffPage = 1;
-      this.totalStaffPages = Math.ceil(this.filteredStaff.length / this.itemsPerStaffPage) || 1;
-      this.updateCurrentPageStaff();
-    }
-  },
-  mounted() {
-    // Check if we need to refresh
-    const needsRefresh = sessionStorage.getItem("needsRefresh");
-    if (needsRefresh) {
-      sessionStorage.removeItem("needsRefresh");
-      window.location.reload();
-    }
-    this.fetchPatients();
-    this.fetchMedicalPersonnel();
-    this.fetchStaff();
-  },
 };
+
+const updateCurrentPagePatients = () => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage.value;
+  const endIndex = startIndex + itemsPerPage.value;
+  patients.value = filteredPatients.value.slice(startIndex, endIndex);
+};
+
+const changePage = (newPage) => {
+  const maxPages = Math.ceil(filteredPatients.value.length / itemsPerPage.value) || 1;
+  if (newPage >= 1 && newPage <= maxPages) {
+    currentPage.value = newPage;
+    updateCurrentPagePatients();
+  }
+};
+
+const fetchMedicalPersonnel = async () => {
+  try {
+    const { data: doctorData } = await axios.get("http://127.0.0.1:8000/doctors/");
+    allMedicalPersonnel.value = doctorData.map(
+      (doctor) => createMedicalPersonnel(doctor.id, doctor.name)
+    );
+    totalDoctorPages.value = Math.ceil(filteredMedicalPersonnel.value.length / itemsPerDoctorPage.value);
+    updateCurrentPageMedicalPersonnel();
+  } catch (error) {
+    console.error("Error fetching medical personnel:", error);
+    allMedicalPersonnel.value = [];
+    medicalPersonnel.value = [];
+    totalDoctorPages.value = 1;
+  }
+};
+
+const updateCurrentPageMedicalPersonnel = () => {
+  const startIndex = (currentDoctorPage.value - 1) * itemsPerDoctorPage.value;
+  const endIndex = startIndex + itemsPerDoctorPage.value;
+  medicalPersonnel.value = filteredMedicalPersonnel.value.slice(startIndex, endIndex);
+};
+
+const changeDoctorPage = (newPage) => {
+  const maxPages = Math.ceil(filteredMedicalPersonnel.value.length / itemsPerDoctorPage.value) || 1;
+  if (newPage >= 1 && newPage <= maxPages) {
+    currentDoctorPage.value = newPage;
+    updateCurrentPageMedicalPersonnel();
+  }
+};
+
+const fetchStaff = async () => {
+  try {
+    const { data: staffData } = await axios.get("http://127.0.0.1:8000/staffs/");
+    allStaff.value = staffData.map(
+      (staff) => createStaff(staff.id, staff.name, staff.role, staff.contact, staff.shift)
+    );
+    totalStaffPages.value = Math.ceil(filteredStaff.value.length / itemsPerStaffPage.value);
+    updateCurrentPageStaff();
+  } catch (error) {
+    console.error("Error fetching staff:", error);
+    allStaff.value = [];
+    staffMembers.value = [];
+    totalStaffPages.value = 1;
+  }
+};
+
+const updateCurrentPageStaff = () => {
+  const startIndex = (currentStaffPage.value - 1) * itemsPerStaffPage.value;
+  const endIndex = startIndex + itemsPerStaffPage.value;
+  staffMembers.value = filteredStaff.value.slice(startIndex, endIndex);
+};
+
+const changeStaffPage = (newPage) => {
+  const maxPages = Math.ceil(filteredStaff.value.length / itemsPerStaffPage.value) || 1;
+  if (newPage >= 1 && newPage <= maxPages) {
+    currentStaffPage.value = newPage;
+    updateCurrentPageStaff();
+  }
+};
+
+// Navigation methods
+const addStaff = () => {
+  router.push("/staff/add_staff");
+};
+
+const deleteStaff = () => {
+  router.push("/staff/delete_staff");
+};
+
+const addPatients = () => {
+  router.push("/patient/add_patient");
+};
+
+const deletePatients = () => {
+  router.push("/patient/delete_patient");
+};
+
+const addMedicalPersonnel = () => {
+  router.push("/medical/add_medical");
+};
+
+const deleteMedicalPersonnel = () => {
+  router.push("/medical/delete_medical");
+};
+
+// Delete handler
+const handleDeleted = ({ id, type }) => {
+  if (type === "patient") {
+    allPatients.value = allPatients.value.filter((patient) => patient.id !== id);
+    totalPatientPages.value = Math.ceil(filteredPatients.value.length / itemsPerPage.value) || 1;
+    updateCurrentPagePatients();
+  } else if (type === "staff") {
+    allStaff.value = allStaff.value.filter((staff) => staff.id !== id);
+    totalStaffPages.value = Math.ceil(filteredStaff.value.length / itemsPerStaffPage.value) || 1;
+    updateCurrentPageStaff();
+  } else {
+    allMedicalPersonnel.value = allMedicalPersonnel.value.filter((person) => person.id !== id);
+    totalDoctorPages.value = Math.ceil(filteredMedicalPersonnel.value.length / itemsPerDoctorPage.value) || 1;
+    updateCurrentPageMedicalPersonnel();
+  }
+};
+
+// Watch handlers
+watch(searchInput, () => {
+  // Reset to first page for patients
+  currentPage.value = 1;
+  totalPatientPages.value = Math.ceil(filteredPatients.value.length / itemsPerPage.value) || 1;
+  updateCurrentPagePatients();
+
+  // Reset to first page for medical personnel
+  currentDoctorPage.value = 1;
+  totalDoctorPages.value = Math.ceil(filteredMedicalPersonnel.value.length / itemsPerDoctorPage.value) || 1;
+  updateCurrentPageMedicalPersonnel();
+
+  // Reset to first page for staff
+  currentStaffPage.value = 1;
+  totalStaffPages.value = Math.ceil(filteredStaff.value.length / itemsPerStaffPage.value) || 1;
+  updateCurrentPageStaff();
+});
+
+// Lifecycle hooks
+onMounted(() => {
+  // Check if we need to refresh
+  const needsRefresh = sessionStorage.getItem("needsRefresh");
+  if (needsRefresh) {
+    sessionStorage.removeItem("needsRefresh");
+    window.location.reload();
+  }
+
+  // Fetch data
+  fetchPatients();
+  fetchMedicalPersonnel();
+  fetchStaff();
+});
 </script>
-
-<style lang="css">
-
-.search-container
-{
-  margin: 2%;
-  display: flex;
-  flex-direction: column;
-}
-
-.search-box
-{
-  justify-content: center;
-  flex: 1;
-}
-
-/* Update existing styles */
-.text-Dashboard {
-  font-family: var(--font-primary);
-  font-size: 2.5rem;
-  font-weight: 600;
-  color: #1a365d;
-  letter-spacing: -0.5px;
-}
-
-.history-dashboard
-{
-  background-color: #ffffff;
-  display: flex;
-  justify-content: space-between;
-  border-radius: 10px;
-}
-
-.history-dashboard .left,
-.history-dashboard .right
-{
-  flex: 1;
-  margin: 10px 2%;
-}
-
-.space
-{
-  padding: 2% 4%;
-}
-
-/* Update existing styles */
-.head-card {
-  font-family: var(--font-primary);
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-top: 3%;
-  margin-bottom: 5%;
-}
-
-.button-add-delete
-{
-  display: flex;
-}
-
-.add-delete-right
-{
-  margin-left: auto;
-  /* display: flex; */
-  gap: 10px;
-}
-
-.pagination
-{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 20px;
-  gap: 20px;
-}
-
-/* Update existing styles */
-.pagination-btn {
-  font-family: var(--font-secondary);
-  font-weight: 500;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 8px 16px;
-  background-color: #496d96;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Shadow effect */
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.pagination-btn:hover {
-    box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.4); /* Stronger shadow on hover */
-    transform: translateY(-2px); /* Slight lift effect */
-}
-
-.pagination-btn:active {
-    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Smaller shadow when clicked */
-    transform: translateY(1px); /* Pressed effect */
-}
-
-.pagination-btn:disabled
-{
-  background-color: #d0e3f9;
-  cursor: not-allowed;
-}
-
-/* Update existing styles */
-.page-info {
-  font-family: var(--font-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.add-docter {
-    font-family: var(--font-secondary);
-    font-weight: 500;
-    font-size: 0.875rem;
-    letter-spacing: 0.5px;
-    background-color: transparent; /* No background */
-    color: 	#2E8B57; /* Green text */
-    padding: 5px 20px;
-    margin: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    border: 2px solid 	#2E8B57; /* Green border */
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-}
-
-/* Hover Effect */
-.add-docter:hover {
-    background-color: 	#2E8B57; /* Fill background */
-    color: white; /* White text */
-}
-
-/* Click (Active) Effect */
-.add-docter:active {
-    opacity: 0.7; /* Light fade effect */
-}
-
-.delete-docter {
-    font-family: var(--font-secondary);
-    font-weight: 500;
-    font-size: 0.875rem;
-    letter-spacing: 0.5px;
-    background-color: transparent; /* No background */
-    color: #D70040; /* Red text */
-    padding: 5px 12px;
-    font-size: 16px;
-    font-weight: bold;
-    border: 2px solid #D70040; /* Red border */
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-}
-
-/* Hover Effect */
-.delete-docter:hover {
-    background-color: #D70040; /* Fill background */
-    color: white; /* White text */
-}
-
-/* Click (Active) Effect */
-.delete-docter:active {
-    opacity: 0.7; /* Light fade effect */
-}
-
-/* Add these new styles at the end of your style section */
-#default-search {
-  font-family: var(--font-secondary);
-  font-size: 0.875rem;
-  transition: all 0.3s ease-in-out;
-  transform-origin: center;
-}
-
-#default-search:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-#default-search:focus {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  border-color: #3b82f6;
-}
-
-.search-container {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Add animation for the search icon */
-.absolute svg {
-  transition: all 0.3s ease;
-}
-
-#default-search:focus + .absolute svg,
-#default-search:hover + .absolute svg {
-  transform: scale(1.1);
-  color: #3b82f6;
-}
-
-/* Add or modify these styles */
-.dashboard-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2%;
-  margin: 40px;
-}
-
-.text-Dashboard {
-  margin: 0;  /* Remove existing margins */
-  font-size: 40px;
-  font-weight: bold;
-  color: #1a365d;
-}
-
-.search-container {
-  margin: 0;  /* Remove existing margins */
-  flex: 1;
-  max-width: 500px;
-  margin-left: 200px;
-}
-
-/* Add these new styles for staff details */
-.staff-details {
-  margin-top: 8px;
-  padding: 8px;
-  background-color: #f8fafc;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 4px;
-}
-
-.detail-label {
-  font-weight: 600;
-  color: #4b5563;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Add hover effect to staff cards */
-li:hover .staff-details {
-  background-color: #eef2ff;
-  transition: background-color 0.3s;
-}
-
-</style>

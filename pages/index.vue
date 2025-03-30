@@ -1,4 +1,4 @@
-<template lang="html">
+<template>
     <div>
         <div class="flex justify-center text-center mt-40">
             <p>ขอไอดีหมอหน่อยครับหรือจะไปหน้า admin</p>
@@ -15,43 +15,37 @@
                                 d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
                         </svg>
                     </div>
-                    <input v-model="doctor_id" type="search" id="default-search"
-                        class="block w-full p-4 ps-10 text-sm text-black-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 white:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-green dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    <input v-model="doctorId" type="search" id="default-search"
+                        class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="ขอไอดีหมอหน่อยครับ" required />
                 </div>
             </form>
         </div>
         <div class="flex justify-center space-x-10 mt-4">
-            <button @click="goToAdmin" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            <button @click="goToAdmin"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
                 Admin
             </button>
             <button @click="goToDoctor"
-                class="p-12 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
                 Doctor
             </button>
         </div>
     </div>
 </template>
 
-<script lang="ts">
-export default {
-    data ()
-    {
-        return {
-            doctor_id: ""
-        };
-    },
-    methods: {
-        goToAdmin ()
-        {
-            this.$router.push('/Admin');
-        },
-        goToDoctor ()
-        {
-            this.$router.push(`/doctor/${this.doctor_id}`);
-        }
-    }
+<script setup lang="ts">
+import { useRouter } from 'nuxt/app';
+import { ref } from 'vue';
+
+const router = useRouter();
+const doctorId = ref('');
+
+const goToAdmin = () => {
+    router.push('/Admin');
+};
+
+const goToDoctor = () => {
+    router.push(`/doctor/${doctorId.value}`);
 };
 </script>
-
-<style lang="postcss"></style>

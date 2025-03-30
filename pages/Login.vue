@@ -1,78 +1,41 @@
 <!-- @format -->
 
-<template lang="html">
-	<div class="page">
-		<div class="login-text"> Login</div>
-		<div class="hight">
-			<p> Login to your account. </p>
+<template>
+	<div class="h-screen w-screen bg-white text-center flex flex-col items-center justify-center">
+		<div class="text-xl font-bold mb-1">Login</div>
+		<div class="mb-2">
+			<p>Login to your account.</p>
 		</div>
-		<!-- from -->
-		<div class="from">
-			<div class="text-from">
-				<p>E-mail Address</p>
-				<input v-model="email" type="email" />
+		<!-- form -->
+		<div class="w-full max-w-sm mb-4">
+			<div class="text-left mb-3">
+				<p class="mb-1">E-mail Address</p>
+				<input v-model="email" type="email"
+					class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
 			</div>
-			<div class="text-from">
-				<p>Password</p>
-				<input v-model="password" type="password" />
+			<div class="text-left mb-3">
+				<p class="mb-1">Password</p>
+				<input v-model="password" type="password"
+					class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
 			</div>
 		</div>
-		<!-- subbmit button -->
+		<!-- submit button -->
 		<button type="button"
-			class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-			@click="login">login</button>
+			class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors duration-300"
+			@click="login">
+			Login
+		</button>
 	</div>
 </template>
-<script>
-export default {
-	data() {
-		return {
-			email: '',
-			password: '',
-		};
-	},
-	methods: {
-		login() {
-			document.cookie = `session=${this.email}; path=/; max-age=3600; secure; samesite=strict`;
-			alert(`Email : ${this.email} \nPassword: ${this.password}`);
-		},
-	},
+
+<script setup>
+import { ref } from 'vue';
+
+const email = ref('');
+const password = ref('');
+
+const login = () => {
+	document.cookie = `session=${email.value}; path=/; max-age=3600; secure; samesite=strict`;
+	alert(`Email: ${email.value}\nPassword: ${password.value}`);
 };
 </script>
-<style lang="css">
-.hight {
-	margin: 0.5%;
-}
-
-.page {
-	/* align-content: center; */
-	background-color: #253d90;
-	background-color: #ffffff;
-	height: 100vh;
-	width: 100vw;
-	text-align: center;
-	align-items: center;
-	align-content: center;
-}
-
-.login-text {
-	font-weight: bold;
-	font-size: 20px;
-}
-
-input {
-	border: 1px solid #ccc;
-	border-radius: 6px;
-}
-
-.from {
-	/* text-align: left; */
-	justify-content: left;
-	justify-items: center;
-	margin-bottom: 1%;
-}
-
-.text-from {
-	text-align: left;
-}
-</style>
