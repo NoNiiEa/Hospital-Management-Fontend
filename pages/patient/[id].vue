@@ -254,8 +254,13 @@
     <div v-if="showBillingForm" class="modal">
       <div class="modal-content">
         <h2>Add Billing</h2>
-        <label>Appointment ID (optional):</label>
-        <input type="text" v-model="newBilling.appointment_id" placeholder="Enter appointment ID" />
+        <label>Appointment:</label>
+        <select v-model="newBilling.appointment_id" class="p-2 border rounded w-full">
+          <option value="N/A">No appointment (direct payment)</option>
+          <option v-for="appointment in appointments" :key="appointment.id" :value="appointment.id">
+            {{ formatDate(appointment.date) }} - {{ appointment.time }} ({{ appointment.status }})
+          </option>
+        </select>
         <label>Total Amount ($):</label>
         <input type="number" v-model.number="newBilling.total_amount" min="0" step="0.01" />
         <label>Status:</label>
@@ -392,7 +397,7 @@ const newMedicalHistory = reactive({
 // Initialize newBilling
 const newBilling = reactive({
   patient_id: route.params.id,
-  appointment_id: '',
+  appointment_id: 'N/A',
   total_amount: 0,
   status: 'Paid',
   payment_method: 'Credit Card'
@@ -762,8 +767,9 @@ const fetchBillings = async () => {
     const response = await axios.get("http://127.0.0.1:8000/billings/");
     console.log("Raw billing data:", response.data);
 
+    // Filter billings where the patient field matches the current patient ID
     billings.value = response.data.filter(billing =>
-      billing.patient_id === route.params.id
+      billing.patient === route.params.id
     );
 
     console.log("Filtered billings:", billings.value);
@@ -783,25 +789,30 @@ const addBilling = async () => {
       return;
     }
 
-    newBilling.patient_id = route.params.id;
+    // Create the billing data to send to API
+    // The API expects fields named "patient_id" and "appointment_id"
+    const billingData = {
+      patient_id: route.params.id,
+      appointment_id: newBilling.appointment_id,
+      total_amount: newBilling.total_amount,
+      status: newBilling.status,
+      payment_method: newBilling.payment_method
+    };
 
-    if (!newBilling.appointment_id.trim()) {
-      newBilling.appointment_id = "N/A";
-    }
-
-    console.log("Adding billing:", newBilling);
+    console.log("Adding billing:", billingData);
 
     const response = await axios.post(
       "http://127.0.0.1:8000/billings/create",
-      newBilling
+      billingData
     );
 
     if (response.status === 201 || response.status === 200) {
       billings.value.push(response.data);
 
+      // Reset the form
       Object.assign(newBilling, {
-        patient_id: '',
-        appointment_id: '',
+        patient_id: route.params.id,
+        appointment_id: 'N/A',
         total_amount: 0,
         status: 'Paid',
         payment_method: 'Credit Card'
@@ -810,10 +821,21 @@ const addBilling = async () => {
       showBillingForm.value = false;
 
       alert("Billing added successfully");
+
+      // Refresh the billings list
+      await fetchBillings();
     }
   } catch (error) {
     console.error("Error adding billing:", error);
-    alert("Failed to add billing: " + (error.response?.data?.detail || "Unknown error"));
+    let errorMessage = "Failed to add billing";
+
+    if (error.response?.data?.detail) {
+      errorMessage += ": " + error.response.data.detail;
+    } else if (error.message) {
+      errorMessage += ": " + error.message;
+    }
+
+    alert(errorMessage);
   } finally {
     billingLoading.value = false;
   }
@@ -824,6 +846,9 @@ const getBillingStatusClass = (status) => {
     case 'Paid': return 'status-confirmed';
     case 'Pending': return 'status-pending';
     case 'Overdue': return 'status-overdue';
+    case 'Admitted': return 'status-admitted';
+    case 'Cancelled': return 'status-cancelled';
+    case 'Refunded': return 'status-refunded';
     default: return '';
   }
 };
@@ -879,9 +904,10 @@ onMounted(async () => {
 
   watch(showBillingForm, (newValue) => {
     if (newValue) {
+      // Reset the form but keep the patient_id
       Object.assign(newBilling, {
         patient_id: route.params.id,
-        appointment_id: '',
+        appointment_id: appointments.value.length > 0 ? appointments.value[0].id : 'N/A',
         total_amount: 0,
         status: 'Paid',
         payment_method: 'Credit Card'
@@ -1237,5 +1263,19 @@ button {
 /* Stats section styling */
 .stats-section {
   margin-bottom: 2rem;
+}
+
+/* Add these new status classes */
+.status-admitted {
+  color: blue;
+}
+
+.status-cancelled {
+  color: #666;
+  text-decoration: line-through;
+}
+
+.status-refunded {
+  color: purple;
 }
 </style>

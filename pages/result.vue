@@ -1015,10 +1015,6 @@ watch([searchQuery, ageRange, selectedGenders, multipleSelectedDiseases],
         <ULoader />
       </div>
 
-      <div v-else class="text-center py-8 text-gray-500">
-        <UIcon name="i-heroicons-face-frown" class="text-4xl mx-auto mb-2 text-gray-400" />
-        Patient data not available
-      </div>
     </UCard>
     <!-- </UModal> -->
 
